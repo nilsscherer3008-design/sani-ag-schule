@@ -273,6 +273,9 @@ body.teacher button.to{display:inline-flex;}
 @keyframes call-ring{0%,100%{box-shadow:0 0 0 12px rgba(248,113,113,.2),0 0 0 24px rgba(248,113,113,.1)}50%{box-shadow:0 0 0 18px rgba(248,113,113,.3),0 0 0 36px rgba(248,113,113,.15)}}
 @keyframes call-pulse-btn{0%,100%{box-shadow:0 4px 20px rgba(52,199,89,.5)}50%{box-shadow:0 4px 32px rgba(52,199,89,.9),0 0 0 10px rgba(52,199,89,.2)}}
 @keyframes call-fade{0%,100%{opacity:.7}50%{opacity:1}}
+.em-cat-btn{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:10px;font-family:'Outfit',sans-serif;font-size:.86rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.em-cat-btn.active{background:var(--accent3);border-color:var(--accent3);color:#fff;}
+.em-cat-btn#em-cat-drill.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 .em-loc-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:20px;padding:5px 12px;font-family:'Outfit',sans-serif;font-size:.8rem;cursor:pointer;transition:all .2s;}
 .em-loc-btn:hover,.em-loc-btn.active{background:rgba(248,113,113,.15);border-color:var(--accent3);color:var(--accent3);}
 @media(max-width:768px){#emergency-fab{padding:7px 11px;font-size:.8rem;}}
@@ -391,13 +394,29 @@ body.teacher button.to{display:inline-flex;}
 <div id="emergency-modal" class="modal hidden">
   <div class="mc" style="border-top:4px solid var(--accent3);max-width:500px">
     <div class="mh">
-      <h2 style="color:var(--accent3);display:flex;align-items:center;gap:8px">
+      <h2 id="em-modal-title" style="color:var(--accent3);display:flex;align-items:center;gap:8px">
         <span style="animation:pulse-icon 1s infinite">🚨</span> NOTFALL AUSLÖSEN
       </h2>
       <button class="mx close-m">&times;</button>
     </div>
-    <div style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:11px 14px;margin-bottom:16px;font-size:.85rem;color:var(--accent3)">
+    <div style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:11px 14px;margin-bottom:16px;font-size:.85rem;color:var(--accent3)" id="em-warnbox">
       ⚠️ Alle heute eingetragenen Sanis werden sofort benachrichtigt!
+    </div>
+
+    <!-- Kategorie: echter Notfall oder Übung. Nur Lehrer sehen die Übungs-Option. -->
+    <div class="fg to" id="em-kategorie">
+      <label>Kategorie</label>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="em-cat-btn active" id="em-cat-real" onclick="setEmCat(false)">🚨 Echter Notfall</button>
+        <button type="button" class="em-cat-btn" id="em-cat-drill" onclick="setEmCat(true)">🎓 Übung</button>
+      </div>
+    </div>
+
+    <div class="fg hidden" id="em-scenario-area">
+      <label>Übungs-Szenario auswählen</label>
+      <select id="em-scenario" onchange="applyScenario()">
+        <option value="">— eigenes Szenario eintippen —</option>
+      </select>
     </div>
     <div class="fg">
       <label>Was ist passiert?</label>
@@ -438,6 +457,7 @@ body.teacher button.to{display:inline-flex;}
     <strong style="font-size:.95rem">NOTFALL AKTIV</strong>
     <div id="banner-text" style="font-size:.82rem;opacity:.9"></div>
   </div>
+  <a href="tel:112" style="background:#fff;color:#cc0000;border-radius:8px;padding:7px 14px;font-family:'Outfit',sans-serif;font-size:.83rem;font-weight:700;text-decoration:none;flex-shrink:0">📞 112</a>
   <button id="sms-backup-btn" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:7px 14px;font-family:'Outfit',sans-serif;font-size:.83rem;cursor:pointer;font-weight:600">📱 Per SMS sichern</button>
   <button id="resolve-btn" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:7px 14px;font-family:'Outfit',sans-serif;font-size:.83rem;cursor:pointer;font-weight:600">✓ Erledigt</button>
 </div>
@@ -544,6 +564,10 @@ body.teacher button.to{display:inline-flex;}
         <span>📱 Notfall-SMS</span>
         <button class="btn-ghost" style="font-size:.74rem" onclick="openPhoneModal()">Nummer eintragen</button>
       </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;font-size:.78rem;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">
+        <span>➕ Erste Hilfe</span>
+        <a href="https://www.drk.de/hilfe-in-deutschland/erste-hilfe/" target="_blank" rel="noopener" class="btn-ghost" style="font-size:.74rem;text-decoration:none">DRK nachschlagen</a>
+      </div>
     </div>
     <nav>
       <button class="nav-item active" data-v="dashboard">📊 Übersicht</button>
@@ -551,6 +575,8 @@ body.teacher button.to{display:inline-flex;}
       <button class="nav-item" data-v="check">✅ Check-Kalender</button>
       <button class="nav-item" data-v="list">📋 Terminliste</button>
       <button class="nav-item" data-v="chat">💬 Chat</button>
+      <button class="nav-item" data-v="firstaid">➕ Erste Hilfe</button>
+      <button class="nav-item to" data-v="training" style="display:none">🎓 Übungen</button>
     </nav>
     <div class="upcoming-card" id="upcoming-card">
       <h3>Kommende Termine</h3>
@@ -611,17 +637,17 @@ body.teacher button.to{display:inline-flex;}
         </div>
         <button id="sick-btn" onclick="reportSick()" style="background:var(--accent3);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-family:'Outfit',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer">🤒 Ich bin krank</button>
       </div>
-      <!-- Dienst-Status: wer ist gerade im Dienst -->
+      <!-- Dienst-Status: kommt direkt aus dem Check-Kalender -->
       <div id="duty-area" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
           <div>
-            <div style="font-weight:600;font-size:.95rem">🚑 Notfall-Dienst</div>
-            <div id="duty-status-text" style="font-size:.8rem;color:var(--text2);margin-top:2px">Du bist heute nicht im Dienst</div>
+            <div style="font-weight:600;font-size:.95rem">🚑 Notfall-Dienst heute</div>
+            <div id="duty-status-text" style="font-size:.8rem;color:var(--text2);margin-top:2px">Du bist heute nicht eingetragen</div>
           </div>
-          <button id="duty-btn" onclick="toggleDuty()" style="background:var(--accent2);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-family:'Outfit',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer">✅ In den Dienst</button>
+          <button id="duty-goto-check" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-family:'Outfit',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer">✅ Zum Check-Kalender</button>
         </div>
         <div id="duty-list" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-          <div style="font-size:.78rem;color:var(--text2)">Heute im Dienst:</div>
+          <div style="font-size:.78rem;color:var(--text2)">Heute im Dienst (aus dem Check-Kalender):</div>
           <div id="duty-people" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
         </div>
       </div>
@@ -652,6 +678,29 @@ body.teacher button.to{display:inline-flex;}
     <section id="v-list" class="view hidden">
       <div class="srch"><input type="text" id="list-search" placeholder="🔍 Termine suchen..."></div>
       <div id="list-items" style="display:flex;flex-direction:column;gap:8px"></div>
+    </section>
+    <section id="v-firstaid" class="view hidden">
+      <div style="max-width:760px">
+        <h2 style="font-size:1.4rem;font-weight:700;margin-bottom:4px">➕ Erste Hilfe</h2>
+        <p style="color:var(--text2);font-size:.85rem;margin-bottom:6px">Zum Auffrischen und Nachschlagen. Tippe auf ein Thema.</p>
+        <div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.35);border-radius:10px;padding:10px 13px;font-size:.8rem;color:var(--accent4);margin-bottom:14px;line-height:1.5">
+          ⚠️ Gedächtnisstütze — ersetzt keinen Erste-Hilfe-Kurs. Im Zweifel immer <strong>112</strong>.
+        </div>
+        <input type="text" id="fa-search" placeholder="🔍 Suchen (z.B. Blutung, Asthma, Notruf)" style="width:100%;margin-bottom:14px">
+        <div id="fa-list"></div>
+        <div style="margin-top:18px;text-align:center">
+          <a href="https://www.drk.de/hilfe-in-deutschland/erste-hilfe/" target="_blank" rel="noopener" class="btn-ghost" style="font-size:.8rem;text-decoration:none">Mehr beim DRK nachlesen ↗</a>
+        </div>
+      </div>
+    </section>
+    <section id="v-training" class="view hidden">
+      <div style="max-width:760px">
+        <h2 style="font-size:1.4rem;font-weight:700;margin-bottom:4px">🎓 Übungen</h2>
+        <p style="color:var(--text2);font-size:.85rem;margin-bottom:14px">Übungs-Einsatz auslösen. Alle heute im Check-Kalender eingetragenen Sanis werden alarmiert — deutlich als Übung gekennzeichnet, ohne SMS.</p>
+        <div id="tr-duty-hint" style="border-radius:10px;padding:10px 13px;font-size:.8rem;margin-bottom:14px;line-height:1.5"></div>
+        <input type="text" id="tr-search" placeholder="🔍 Szenario suchen" style="width:100%;margin-bottom:14px">
+        <div id="tr-list"></div>
+      </div>
     </section>
     <section id="v-chat" class="view hidden" style="padding:14px 14px 0">
       <div class="wa">
@@ -987,6 +1036,8 @@ async function refreshData(uid) {
     if(v==='check') renderCheck();
     if(v==='list') renderList();
     if(v==='chat') renderChat();
+    if(v==='firstaid') renderFirstAid();
+    if(v==='training') renderTraining();
   } catch(e) {}
 }
 
@@ -1047,23 +1098,49 @@ async function loadGoals() {
     goals = d2 || [];
   }
 }
+// Datenbank-Fehler NICHT verschlucken: sonst bleiben Listen einfach leer und
+// es sieht aus, als wäre die App kaputt — statt dass man die Ursache sieht.
+let dbFehlerGezeigt = false;
+function dbFehler(was, error) {
+  if (!error) return false;
+  console.error('[Sani-AG] ' + was + ' fehlgeschlagen:', error);
+  if (!dbFehlerGezeigt) {
+    dbFehlerGezeigt = true;
+    toast('Datenbank-Fehler bei "' + was + '": ' + (error.message || 'unbekannt') + ' — F12 → Console für Details', 'e', 12000);
+  }
+  return true;
+}
+
 async function loadCheckEntries() {
-  const { data } = await sb.from('check_entries').select('*');
+  const { data, error } = await sb.from('check_entries').select('*');
+  dbFehler('Check-Kalender laden', error);
   checkEntries = data || [];
 }
 async function loadContacts() {
-  const { data } = await sb.from('chat_contacts').select('*').order('created_at');
+  const { data, error } = await sb.from('chat_contacts').select('*').order('created_at');
+  dbFehler('Chat-Kontakte laden', error);
   contacts = data || [];
   if (contacts.length) { activeChatId = contacts[0].id; await loadMessages(activeChatId); }
 }
-// Wer ist HEUTE im Dienst? (für gezielte Notfall-Alarme)
+// Wer ist HEUTE im Dienst? Das steht im Check-Kalender: Wer sich dort für
+// mindestens einen Stundenblock von heute eingetragen hat, ist im Dienst.
+// (Früher gab es dafür einen extra Knopf — doppelte Pflege, unnötig.)
 let dutyToday = [];
+function refreshDutyFromChecks() {
+  const ds = fmtD(new Date());
+  const seen = new Set();
+  dutyToday = [];
+  for (const e of checkEntries) {
+    if (e.date === ds && !seen.has(e.user_id)) {
+      seen.add(e.user_id);
+      dutyToday.push({ user_id: e.user_id, user_name: e.user_name });
+    }
+  }
+  return dutyToday;
+}
 async function loadDutyToday() {
-  try {
-    const ds = fmtD(new Date());
-    const { data } = await sb.from('duty_status').select('*').eq('date', ds).order('created_at');
-    dutyToday = data || [];
-  } catch (e) { dutyToday = []; }
+  await loadCheckEntries();
+  return refreshDutyFromChecks();
 }
 function amIOnDutyToday() {
   return dutyToday.some(d => d.user_id === CU?.id);
@@ -1102,7 +1179,7 @@ function reRenderActive() { const v=activeView(); if(v==='calendar')renderCal();
 function activeView() { return document.querySelector('.nav-item.active')?.dataset?.v; }
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
-const VIEWS = ['dashboard','calendar','check','list','chat'];
+const VIEWS = ['dashboard','calendar','check','list','chat','firstaid','training'];
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
@@ -1113,6 +1190,8 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     if(v==='check') renderCheck();
     if(v==='list') renderList();
     if(v==='chat') renderChat();
+    if(v==='firstaid') renderFirstAid();
+    if(v==='training') renderTraining();
     if(window.innerWidth<=768) closeSb();
   });
 });
@@ -1139,18 +1218,14 @@ function renderDuty() {
   if (CU?.role === 'Sekretariat') { area.style.display = 'none'; return; }
   area.style.display = '';
 
-  const onDuty = amIOnDutyToday();
-  const btn = document.getElementById('duty-btn');
+  refreshDutyFromChecks();
+
   const statusText = document.getElementById('duty-status-text');
-  if (onDuty) {
-    btn.textContent = '⏹ Aus dem Dienst';
-    btn.style.background = 'var(--text2)';
-    statusText.textContent = 'Du bist heute im Dienst ✓';
+  if (amIOnDutyToday()) {
+    statusText.textContent = 'Du bist heute eingetragen ✓ — der Alarm kommt bei dir an';
     statusText.style.color = 'var(--accent2)';
   } else {
-    btn.textContent = '✅ In den Dienst';
-    btn.style.background = 'var(--accent2)';
-    statusText.textContent = 'Du bist heute nicht im Dienst';
+    statusText.textContent = 'Du bist heute nicht eingetragen — du bekommst keinen Alarm';
     statusText.style.color = 'var(--text2)';
   }
 
@@ -1160,30 +1235,14 @@ function renderDuty() {
       `<span style="background:rgba(110,231,183,.15);color:var(--accent2);border:1px solid var(--accent2);border-radius:20px;padding:3px 11px;font-size:.8rem">${esc(d.user_name)}</span>`
     ).join('');
   } else {
-    people.innerHTML = '<span style="color:var(--text2);font-size:.8rem">Noch niemand eingetragen</span>';
+    people.innerHTML = '<span style="color:var(--accent4);font-size:.8rem">⚠️ Heute ist niemand eingetragen!</span>';
   }
 }
 
-async function toggleDuty() {
-  const btn = document.getElementById('duty-btn');
-  btn.disabled = true;
-  const ds = fmtD(new Date());
-  if (amIOnDutyToday()) {
-    // austragen
-    await sb.from('duty_status').delete().eq('user_id', CU.id).eq('date', ds);
-    dutyToday = dutyToday.filter(d => d.user_id !== CU.id);
-    toast('Du bist aus dem Dienst ausgetragen.', 'i');
-  } else {
-    // eintragen
-    const entry = { user_id: CU.id, user_name: CU.name, date: ds };
-    const { data } = await sb.from('duty_status').insert(entry).select().single();
-    if (data) dutyToday.push(data);
-    toast('✅ Du bist jetzt im Dienst!', 's');
-  }
-  btn.disabled = false;
-  renderDuty();
-}
-window.toggleDuty = toggleDuty;
+// Knopf springt direkt in den Check-Kalender — dort trägt man sich ein.
+document.getElementById('duty-goto-check')?.addEventListener('click', () => {
+  document.querySelector('.nav-item[data-v="check"]')?.click();
+});
 function renderUpcoming() {
   const ts = fmtD(today), future = appointments.filter(a=>a.date>=ts).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,4);
   document.getElementById('upcoming-list').innerHTML = future.length ? future.map(a=>`<div class="mini-ev"><div>${esc(a.title)}</div><div class="md">${dFmt(a.date)}</div></div>`).join('') : '<p style="color:var(--text2);font-size:.8rem">Keine Termine</p>';
@@ -1423,8 +1482,15 @@ document.getElementById('dash-add-btn').addEventListener('click',()=>openApptMod
 document.getElementById('save-appt-btn').addEventListener('click', async()=>{
   const a={title:document.getElementById('ap-title').value.trim(),date:document.getElementById('ap-date').value,category:document.getElementById('ap-cat').value,time:document.getElementById('ap-time').value,description:document.getElementById('ap-desc').value.trim(),created_by:CU.id};
   if(!a.title||!a.date){toast('Titel und Datum sind Pflichtfelder!','e');return;}
-  if(editApptId) await sb.from('appointments').update(a).eq('id',editApptId);
-  else await sb.from('appointments').insert(a);
+  // Fehler NICHT verschlucken: sonst käme "gespeichert!", obwohl nichts ankam.
+  const { error } = editApptId
+    ? await sb.from('appointments').update(a).eq('id',editApptId)
+    : await sb.from('appointments').insert(a);
+  if (error) {
+    console.error('Termin speichern fehlgeschlagen:', error);
+    toast('Speichern fehlgeschlagen: ' + (error.message || 'unbekannter Fehler'), 'e', 9000);
+    return;
+  }
   await loadAppts();
   document.getElementById('appt-modal').classList.add('hidden');
   renderDash(); renderUpcoming(); renderList();
@@ -1433,7 +1499,8 @@ document.getElementById('save-appt-btn').addEventListener('click', async()=>{
 });
 window.delAppt=async function(id){
   if(!confirm('Termin löschen?')) return;
-  await sb.from('appointments').delete().eq('id',id);
+  const { error } = await sb.from('appointments').delete().eq('id',id);
+  if (error) { toast('Löschen fehlgeschlagen: ' + (error.message || ''), 'e', 8000); return; }
   await loadAppts(); renderList(); renderDash(); renderUpcoming();
   toast('Gelöscht.','i');
 };
@@ -1845,8 +1912,10 @@ function stopTitleFlash() { if (callTitleTimer) { clearInterval(callTitleTimer);
 function showCallScreen(em) {
   callEmergencyData = em;
   const screen = document.getElementById('call-screen');
-  document.getElementById('call-name').textContent = em.triggered_by_name || 'NOTFALL';
-  document.getElementById('call-sub').textContent = `Sani AG · ${em.triggered_at ? new Date(em.triggered_at).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) : ''}`;
+  const drill = !!em.is_drill;
+  document.getElementById('call-name').textContent = (drill ? '🎓 ÜBUNG: ' : '') + (em.triggered_by_name || 'NOTFALL');
+  document.getElementById('call-sub').textContent = (drill ? 'ÜBUNG — kein echter Notfall · ' : 'Sani AG · ')
+    + (em.triggered_at ? new Date(em.triggered_at).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) : '');
   screen.style.display = 'flex';
   playRingtone();
   requestCallWakeLock();
@@ -1866,12 +1935,20 @@ function acceptCall() {
   const infoBox = document.getElementById('call-info-preview');
   const infoText = document.getElementById('call-info-text');
   infoText.innerHTML = `
-    <div style="font-size:1rem;font-weight:700;color:#ff6b6b;margin-bottom:10px">🚨 NOTFALL DETAILS</div>
-    <div style="margin-bottom:6px">👤 <strong>Ausgelöst von:</strong> ${em.triggered_by_name || '–'}</div>
-    <div style="margin-bottom:6px">📍 <strong>Ort:</strong> ${em.location || '–'}</div>
-    <div style="margin-bottom:6px">⚠️ <strong>Was passiert:</strong> ${em.description || '–'}</div>
+    <div style="font-size:1rem;font-weight:700;color:${em.is_drill ? '#4f8ef7' : '#ff6b6b'};margin-bottom:10px">${em.is_drill ? '🎓 ÜBUNG — kein echter Notfall' : '🚨 NOTFALL DETAILS'}</div>
+    <div style="margin-bottom:6px">👤 <strong>Ausgelöst von:</strong> ${esc(em.triggered_by_name || '–')}</div>
+    <div style="margin-bottom:6px">📍 <strong>Ort:</strong> ${esc(em.location || '–')}</div>
+    <div style="margin-bottom:6px">⚠️ <strong>Was passiert:</strong> ${esc(em.description || '–')}</div>
     <div style="margin-bottom:6px">🕐 <strong>Zeit:</strong> ${em.triggered_at ? new Date(em.triggered_at).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) + ' Uhr' : '–'}</div>
-    <div style="margin-top:14px">
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <a href="tel:112" style="flex:1;padding:12px;background:#cc0000;border-radius:12px;color:#fff;font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700;text-align:center;text-decoration:none;display:block">
+        📞 112 anrufen
+      </a>
+      <a href="https://www.drk.de/hilfe-in-deutschland/erste-hilfe/" target="_blank" rel="noopener" style="flex:1;padding:12px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:12px;color:#fff;font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700;text-align:center;text-decoration:none;display:block">
+        ➕ Erste Hilfe
+      </a>
+    </div>
+    <div style="margin-top:8px">
       <button onclick="rejectCall()" style="width:100%;padding:12px;background:#34c759;border:none;border-radius:12px;color:#fff;font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer">
         ✓ Verstanden – Schließen
       </button>
@@ -2120,7 +2197,12 @@ async function submitClaimRole() {
   const resultEl = document.getElementById('claim-role-result');
   if (!code) { resultEl.textContent = 'Bitte Code eingeben.'; resultEl.style.color = 'var(--accent3)'; return; }
   const { data: ok, error } = await sb.rpc('claim_role', { requested_role: role, entered_code: code });
-  if (error || !ok) { resultEl.textContent = '❌ Falscher Code.'; resultEl.style.color = 'var(--accent3)'; return; }
+  if (error) {
+    console.error('[Sani-AG] claim_role fehlgeschlagen:', error);
+    resultEl.textContent = '⚠️ Fehler: ' + (error.message || 'unbekannt');
+    resultEl.style.color = 'var(--accent3)'; return;
+  }
+  if (!ok) { resultEl.textContent = '❌ Falscher Code.'; resultEl.style.color = 'var(--accent3)'; return; }
   resultEl.textContent = '✓ Rolle freigeschaltet!'; resultEl.style.color = 'var(--accent2)';
   const { data: prof } = await sb.from('profiles').select('*').eq('id', CU.id).single();
   if (prof) { CU = prof; applyProfile(); saveCache(); }
@@ -2164,6 +2246,431 @@ function clearServerConfig() {
 }
 window.clearServerConfig = clearServerConfig;
 
+// ── ÜBUNGS-MODUS ──────────────────────────────────────────────────────────────
+// Vorgefertigte Szenarien zum Trainieren. Bewusst fest eingebaut statt per KI:
+// funktioniert offline, kostet nichts, und ist jedes Mal identisch — dadurch
+// kann man vergleichen, wer wie schnell und richtig reagiert.
+
+
+// ── ANSICHT: ERSTE HILFE ──────────────────────────────────────────────────────
+function renderFirstAid(filter) {
+  const box = document.getElementById('fa-list');
+  if (!box) return;
+  const q = (filter ?? document.getElementById('fa-search').value).trim().toLowerCase();
+  const treffer = ERSTE_HILFE.filter(e =>
+    !q || e.t.toLowerCase().includes(q) || e.k.toLowerCase().includes(q) ||
+    e.s.some(x => x.toLowerCase().includes(q)) || (e.w || '').toLowerCase().includes(q)
+  );
+  if (!treffer.length) {
+    box.innerHTML = '<p style="color:var(--text2);font-size:.85rem;text-align:center;padding:20px">Nichts gefunden.</p>';
+    return;
+  }
+  let html = '';
+  let letzteKat = null;
+  for (const e of treffer) {
+    if (e.k !== letzteKat) {
+      html += `<div style="font-size:.75rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 7px">${esc(e.k)}</div>`;
+      letzteKat = e.k;
+    }
+    html += `<details style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:7px;overflow:hidden">
+      <summary style="padding:12px 14px;cursor:pointer;font-weight:600;font-size:.92rem;list-style:none">${esc(e.t)}</summary>
+      <div style="padding:0 14px 13px">
+        <ol style="margin:0 0 0 17px;padding:0;font-size:.85rem;line-height:1.65;color:var(--text)">
+          ${e.s.map(x => `<li style="margin-bottom:5px">${esc(x)}</li>`).join('')}
+        </ol>
+        ${e.w ? `<div style="margin-top:11px;background:rgba(251,191,36,.1);border-left:3px solid var(--accent4);border-radius:0 7px 7px 0;padding:9px 12px;font-size:.81rem;color:var(--accent4);line-height:1.5">⚠️ ${esc(e.w)}</div>` : ''}
+      </div>
+    </details>`;
+  }
+  box.innerHTML = html;
+}
+window.renderFirstAid = renderFirstAid;
+document.getElementById('fa-search')?.addEventListener('input', () => renderFirstAid());
+
+// ── ANSICHT: ÜBUNGEN (nur Lehrer) ─────────────────────────────────────────────
+function renderTraining(filter) {
+  const box = document.getElementById('tr-list');
+  if (!box) return;
+
+  // Hinweis: Wer wird gerade alarmiert?
+  refreshDutyFromChecks();
+  const hint = document.getElementById('tr-duty-hint');
+  if (dutyToday.length) {
+    hint.style.cssText = 'border-radius:10px;padding:10px 13px;font-size:.8rem;margin-bottom:14px;line-height:1.5;background:rgba(110,231,183,.1);border:1px solid rgba(110,231,183,.35);color:var(--accent2)';
+    hint.innerHTML = `✅ Heute im Dienst: <strong>${dutyToday.map(d => esc(d.user_name)).join(', ')}</strong> — diese bekommen die Übung.`;
+  } else {
+    hint.style.cssText = 'border-radius:10px;padding:10px 13px;font-size:.8rem;margin-bottom:14px;line-height:1.5;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.35);color:var(--accent4)';
+    hint.innerHTML = '⚠️ Heute ist niemand im Check-Kalender eingetragen — eine Übung würde niemanden erreichen.';
+  }
+
+  const q = (filter ?? document.getElementById('tr-search').value).trim().toLowerCase();
+  const treffer = UEBUNGS_SZENARIEN
+    .map((s, i) => ({ s, i }))
+    .filter(({ s }) => !q || s.t.toLowerCase().includes(q) || s.k.toLowerCase().includes(q) ||
+                       s.d.toLowerCase().includes(q) || s.o.toLowerCase().includes(q));
+  if (!treffer.length) {
+    box.innerHTML = '<p style="color:var(--text2);font-size:.85rem;text-align:center;padding:20px">Kein Szenario gefunden.</p>';
+    return;
+  }
+  let html = '';
+  let letzteKat = null;
+  for (const { s, i } of treffer) {
+    if (s.k !== letzteKat) {
+      html += `<div style="font-size:.75rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 7px">${esc(s.k)}</div>`;
+      letzteKat = s.k;
+    }
+    html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;flex-wrap:wrap">
+      <div style="flex:1;min-width:190px">
+        <div style="font-weight:600;font-size:.9rem">${esc(s.t)}</div>
+        <div style="font-size:.79rem;color:var(--text2);margin-top:2px;line-height:1.45">${esc(s.d)}</div>
+        <div style="font-size:.75rem;color:var(--text2);margin-top:3px">📍 ${esc(s.o)}</div>
+      </div>
+      <button onclick="startTrainingFromList(${i})" style="background:var(--accent);color:#fff;border:none;border-radius:9px;padding:9px 15px;font-family:'Outfit',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;flex-shrink:0">🎓 Starten</button>
+    </div>`;
+  }
+  box.innerHTML = html;
+}
+window.renderTraining = renderTraining;
+document.getElementById('tr-search')?.addEventListener('input', () => renderTraining());
+
+// Öffnet das gewohnte Notfall-Fenster, schon auf "Übung" gestellt und mit dem
+// Szenario vorausgefüllt. Bewusst kein eigener Absende-Weg — so gibt es nur
+// EINE Stelle, die Einsätze auslöst.
+function startTrainingFromList(i) {
+  const s = UEBUNGS_SZENARIEN[i];
+  openEmergency();
+  setEmCat(true);
+  document.getElementById('em-scenario').value = String(i);
+  document.getElementById('em-desc').value = s.d;
+  document.getElementById('em-loc').value = s.o;
+}
+window.startTrainingFromList = startTrainingFromList;
+
+// ── ERSTE-HILFE-WISSEN ────────────────────────────────────────────────────────
+// Eigene Texte nach dem allgemein gelehrten Erste-Hilfe-Standard. Handgriffe und
+// Abläufe sind Allgemeinwissen und nicht geschützt — hier steht bewusst kein
+// abgeschriebener Fremdtext. Ergänzen/anpassen: einfach hier in der Liste.
+const ERSTE_HILFE = [
+  { k:'Grundlagen', t:'Notruf 112 absetzen', s:[
+    'Wo ist es passiert? — Schule, Gebäude, Raum, Stockwerk',
+    'Was ist passiert? — kurz und sachlich',
+    'Wie viele Betroffene?',
+    'Welche Verletzungen oder Beschwerden?',
+    'Warten! Nicht auflegen — die Leitstelle beendet das Gespräch',
+  ], w:'Der Notruf ist kostenlos und geht von jedem Handy — auch ohne Guthaben.' },
+
+  { k:'Grundlagen', t:'Eigenschutz & Reihenfolge', s:[
+    'Erst schauen: Ist die Lage für mich sicher? (Strom, Chemie, Verkehr)',
+    'Unfallstelle absichern, Gefahr abstellen',
+    'Handschuhe anziehen — immer, auch bei kleinen Wunden',
+    'Betroffenen ansprechen und Hilfe holen lassen',
+    'Notruf 112, dann Erste Hilfe leisten',
+  ], w:'Eigenschutz geht immer vor. Ein zweiter Verletzter hilft niemandem.' },
+
+  { k:'Grundlagen', t:'Bewusstsein & Atmung prüfen', s:[
+    'Laut ansprechen, vorsichtig an den Schultern rütteln',
+    'Keine Reaktion? → Laut um Hilfe rufen',
+    'Kopf vorsichtig überstrecken, Kinn anheben',
+    'Höchstens 10 Sekunden prüfen: Brustkorb sehen, Atem hören, Luft an der Wange fühlen',
+    'Atmet normal → stabile Seitenlage. Atmet nicht normal → Wiederbelebung',
+  ], w:'Schnappatmung ist KEINE normale Atmung — dann sofort mit der Wiederbelebung beginnen.' },
+
+  { k:'Lebensrettend', t:'Stabile Seitenlage', s:[
+    'Seitlich neben die Person knien, ihre Beine strecken',
+    'Nahen Arm angewinkelt nach oben legen, Handfläche zeigt nach oben',
+    'Fernen Arm über die Brust ziehen, Handrücken an die Wange legen und dort halten',
+    'Fernes Bein am Knie greifen, aufstellen',
+    'Am Knie zu sich herüberziehen, bis die Person auf der Seite liegt',
+    'Kopf überstrecken, Mund leicht öffnen — damit alles abfließen kann',
+    'Zudecken, Notruf 112, Atmung dauernd im Blick behalten',
+  ], w:'Für Bewusstlose, die NORMAL atmen. Hört die Atmung auf → sofort Wiederbelebung.' },
+
+  { k:'Lebensrettend', t:'Wiederbelebung (Prüfen · Rufen · Drücken)', s:[
+    'PRÜFEN: keine Reaktion, keine normale Atmung',
+    'RUFEN: 112 (Handy auf Lautsprecher) und jemanden nach dem AED schicken',
+    'DRÜCKEN: Mitte des Brustkorbs, beide Hände übereinander, Arme gestreckt',
+    '5–6 cm tief, 100–120 Mal pro Minute, Brustkorb dazwischen ganz entlasten',
+    'Wenn geübt und bereit: nach 30 Mal Drücken 2 Mal beatmen — sonst durchgehend drücken',
+    'Nicht aufhören bis Rettungsdienst da ist, AED es sagt, oder die Person normal atmet',
+    'Zu zweit alle 2 Minuten abwechseln — Drücken ist anstrengend',
+  ], w:'Durchgehend drücken ist besser als gar nichts. Falsch machen kann man fast nur eins: nicht anfangen.' },
+
+  { k:'Lebensrettend', t:'AED (Defibrillator)', s:[
+    'Einschalten — das Gerät sagt alles Weitere an',
+    'Elektroden auf den nackten Brustkorb kleben (Bild auf den Elektroden)',
+    'Während der Analyse: niemand berührt die Person',
+    'Schock empfohlen? → laut „Weg von der Person!“ rufen, sichergehen, Knopf drücken',
+    'Sofort weiter drücken, bis das Gerät wieder etwas sagt',
+  ], w:'Brust nass oder sehr behaart? Kurz abtrocknen bzw. rasieren, falls Rasierer dabei.' },
+
+  { k:'Lebensrettend', t:'Verschlucken / Fremdkörper', s:[
+    'Hustet die Person noch? → Husten lassen, dabeibleiben, Mut zusprechen',
+    'Kein Husten mehr, keine Luft: 5 kräftige Schläge zwischen die Schulterblätter (Oberkörper nach vorn)',
+    'Ohne Erfolg: 5 Mal Oberbauch ruckartig nach innen-oben ziehen (Heimlich-Handgriff)',
+    'Im Wechsel weitermachen, 112 rufen lassen',
+    'Wird die Person bewusstlos → Wiederbelebung beginnen',
+  ], w:'Heimlich-Handgriff nicht bei Säuglingen. Danach immer zum Arzt — auch wenn es gut ging.' },
+
+  { k:'Blutungen & Wunden', t:'Starke Blutung stillen', s:[
+    'Handschuhe anziehen',
+    'Person hinlegen',
+    'Sofort direkt auf die Wunde drücken — mit Verbandmaterial oder notfalls der Hand',
+    'Druckverband anlegen: Wundauflage, 2 Runden wickeln, Druckpolster drauf, fest weiterwickeln',
+    'Blutet es durch → zweiten Verband darüber, ersten dranlassen',
+    'Verletzte Stelle hochhalten, 112, Person warm halten',
+  ], w:'Auf Schock achten: blass, kaltschweißig, unruhig, schneller Puls.' },
+
+  { k:'Blutungen & Wunden', t:'Schock', s:[
+    'Zeichen: blass, kalter Schweiß, frieren, Zittern, schneller flacher Puls, Unruhe oder Teilnahmslosigkeit',
+    'Hinlegen, Beine etwa 30 cm hochlagern',
+    'Warm zudecken — auch von unten',
+    'Ruhig ansprechen, nicht allein lassen',
+    '112, nichts zu essen oder zu trinken geben',
+  ], w:'Beine NICHT hochlagern bei Atemnot, Kopf- oder Bauchverletzung — dann flach lagern.' },
+
+  { k:'Blutungen & Wunden', t:'Nasenbluten', s:[
+    'Hinsetzen, Kopf nach VORNE beugen',
+    'Nasenflügel 10 Minuten am Stück fest zusammendrücken — nicht zwischendurch loslassen',
+    'Kalten Lappen in den Nacken legen',
+    'Durch den Mund atmen, Blut ausspucken statt schlucken',
+  ], w:'Kopf niemals in den Nacken — dann läuft das Blut in den Magen. Länger als 20 Min oder nach einem Sturz auf den Kopf → Arzt.' },
+
+  { k:'Blutungen & Wunden', t:'Kleine Wunden', s:[
+    'Handschuhe anziehen',
+    'Wunde nicht auswaschen, nicht auspusten, nicht anfassen',
+    'Keimfrei abdecken — Pflaster oder Wundauflage',
+    'Bei Schmutz oder Tierbiss: zum Arzt',
+    'Tetanus-Schutz ansprechen',
+  ], w:'Keine Salben, kein Puder, keine Hausmittel auf offene Wunden.' },
+
+  { k:'Knochen & Gelenke', t:'Knochenbruch', s:[
+    'Nicht bewegen, nichts einrenken',
+    'So ruhigstellen, wie ihr es vorfindet — mit Decken oder Kleidung abpolstern',
+    'Kühlen: Kühlpack in ein Tuch, nie direkt auf die Haut',
+    'Offener Bruch: keimfrei abdecken, nicht spülen, nichts hineindrücken',
+    'Auf Schock achten, 112',
+  ], w:'Nichts zu essen oder zu trinken geben — eventuell muss operiert werden.' },
+
+  { k:'Knochen & Gelenke', t:'Verstauchung & Prellung (PECH)', s:[
+    'Pause — sofort aufhören, nicht weiterspielen',
+    'Eis — kühlen, immer mit Tuch dazwischen, ca. 20 Minuten',
+    'Compression — leichter elastischer Verband',
+    'Hochlagern',
+  ], w:'Starke Schmerzen, Fehlstellung oder gar keine Belastung möglich → Arzt, es kann ein Bruch sein.' },
+
+  { k:'Verbrennung & Chemie', t:'Verbrennung', s:[
+    'Hitze wegnehmen, Gefahr beenden',
+    'Kleine Stelle (etwa handtellergroß): 10–20 Minuten mit lauwarmem Wasser kühlen',
+    'Große Fläche: NICHT kühlen — Unterkühlungsgefahr. Locker keimfrei abdecken, warm halten, 112',
+    'Festgeklebte Kleidung dranlassen, nur lose Sachen entfernen',
+    'Blasen nicht öffnen',
+  ], w:'Kein Eis, kein eiskaltes Wasser, keine Salben, kein Mehl, kein Öl. Verbrennungen im Gesicht oder bei Kindern → immer Arzt.' },
+
+  { k:'Verbrennung & Chemie', t:'Verätzung & Auge', s:[
+    'Eigenschutz: Handschuhe, nichts einatmen, Fenster auf',
+    'Haut: durchtränkte Kleidung entfernen, mindestens 10 Minuten mit viel Wasser spülen',
+    'Auge: mit viel Wasser spülen, Kopf zur betroffenen Seite neigen',
+    'So spülen, dass nichts ins gesunde Auge läuft — vom Nasenrücken nach außen',
+    'Augenlid vorsichtig offen halten, keimfrei abdecken, 112',
+    'Behälter oder Etikett der Chemikalie mitnehmen',
+  ], w:'Nicht neutralisieren, nicht reiben. Bei Verschlucken: nichts zum Erbrechen geben — Giftnotruf.' },
+
+  { k:'Innere Notfälle', t:'Herzinfarkt', s:[
+    'Zeichen: Druck oder Enge in der Brust, Schmerz in Arm/Rücken/Kiefer, Atemnot, Übelkeit, kalter Schweiß, Todesangst',
+    'Sofort 112 — nicht abwarten, nicht selbst fahren',
+    'Oberkörper erhöht lagern, enge Kleidung öffnen',
+    'Beruhigen, nicht mehr aufstehen oder laufen lassen',
+    'Nicht allein lassen, auf Bewusstsein und Atmung achten',
+  ], w:'Bei Frauen und älteren Menschen oft untypisch: nur Übelkeit, Rückenschmerzen oder Atemnot.' },
+
+  { k:'Innere Notfälle', t:'Schlaganfall (FAST-Test)', s:[
+    'Face: Lächeln lassen — hängt ein Mundwinkel?',
+    'Arms: beide Arme nach vorne strecken lassen — sinkt einer ab?',
+    'Speech: einen Satz nachsprechen lassen — klingt es verwaschen?',
+    'Time: Bei einem einzigen auffälligen Zeichen sofort 112',
+    'Oberkörper leicht erhöht lagern, nichts zu essen oder zu trinken geben',
+    'Uhrzeit merken, wann es angefangen hat — das ist für die Klinik wichtig',
+  ], w:'Jede Minute zählt. Auch wenn die Zeichen wieder verschwinden: trotzdem 112.' },
+
+  { k:'Innere Notfälle', t:'Asthmaanfall', s:[
+    'Ruhe bewahren und beruhigen — Angst verschlimmert es',
+    'Aufrecht hinsetzen, Kutschersitz: vorbeugen, Arme auf die Oberschenkel stützen',
+    'Eigenes Notfallspray nehmen lassen (Betroffene wissen, wie)',
+    'Fenster auf, enge Kleidung öffnen',
+    'Lippenbremse: langsam gegen fast geschlossene Lippen ausatmen',
+    'Keine Besserung, blaue Lippen oder Sprechen nicht mehr möglich → 112',
+  ], w:'Nicht hinlegen — im Liegen wird die Atemnot schlimmer.' },
+
+  { k:'Innere Notfälle', t:'Unterzuckerung', s:[
+    'Zeichen: zittrig, blass, kalter Schweiß, Heißhunger, verwirrt, aggressiv, wie betrunken',
+    'Ansprechbar? → Traubenzucker, Saft oder gezuckerte Limo geben',
+    'Nach ein paar Minuten sollte es besser werden, dann etwas Richtiges essen lassen',
+    'Keine Besserung oder Bewusstseinstrübung → 112',
+  ], w:'Bewusstlosen NIEMALS etwas einflößen — Erstickungsgefahr. Dann: Seitenlage und 112. Im Zweifel Zucker geben, das schadet weniger als eine unbehandelte Unterzuckerung.' },
+
+  { k:'Innere Notfälle', t:'Krampfanfall', s:[
+    'Nicht festhalten, nicht aufhalten',
+    'Umgebung sichern: Gefährliches wegräumen, Kopf weich polstern',
+    'Enge Kleidung am Hals öffnen, Uhrzeit merken',
+    'Nach dem Anfall: Bewusstsein und Atmung prüfen, stabile Seitenlage',
+    'Dabeibleiben — die Person ist oft verwirrt und erschöpft',
+    '112 beim ersten Anfall, bei Dauer über 5 Minuten oder wenn er sich wiederholt',
+  ], w:'NICHTS in den Mund schieben — weder Löffel noch Finger. Ein Zungenbiss ist harmlos gegenüber dem Schaden, den das anrichtet.' },
+
+  { k:'Innere Notfälle', t:'Allergischer Schock', s:[
+    'Zeichen: Quaddeln, Schwellung von Lippen/Zunge/Gesicht, Atemnot, Übelkeit, Kreislaufprobleme',
+    'Sofort 112 — das kann sehr schnell lebensbedrohlich werden',
+    'Auslöser weg (z.B. Essen wegnehmen, Stachel entfernen)',
+    'Notfallset? Viele Allergiker tragen einen Adrenalin-Pen — anwenden lassen oder helfen',
+    'Atemnot → aufrecht hinsetzen. Kreislaufprobleme → flach hinlegen, Beine hoch',
+    'Nicht allein lassen, auf Atmung achten',
+  ], w:'Nach Stich in Mund oder Rachen: sofort 112, die Schwellung kann die Atemwege zudrücken. Etwas Kaltes lutschen lassen.' },
+
+  { k:'Umwelt & Sonstiges', t:'Sonnenstich & Hitze', s:[
+    'Sonnenstich: hochroter, heißer Kopf, Kopfschmerzen, Nackensteife, Übelkeit',
+    'Hitzeerschöpfung: blass, viel Schweiß, schwindelig, schlapp',
+    'Sofort in den Schatten oder einen kühlen Raum',
+    'Sonnenstich: Oberkörper leicht erhöht, Kopf und Nacken kühlen',
+    'Hitzeerschöpfung: flach hinlegen, Beine hoch',
+    'Ansprechbar → langsam trinken lassen. Bewusstseinsstörung → 112',
+  ], w:'Bei Verwirrtheit, Krampf oder Bewusstlosigkeit ist es ein Hitzschlag — Notfall, sofort 112.' },
+
+  { k:'Umwelt & Sonstiges', t:'Unterkühlung', s:[
+    'In einen warmen Raum bringen, vor Wind schützen',
+    'Nasse Kleidung ausziehen, in Decken einpacken — auch Kopf',
+    'Ansprechbar → warmes, gezuckertes Getränk',
+    'Vorsichtig bewegen, nicht rubbeln, nicht massieren',
+    'Erfrierungen an Fingern/Ohren: nicht reiben, locker abdecken',
+  ], w:'Kein Alkohol. Bei starker Unterkühlung sehr vorsichtig bewegen und 112.' },
+
+  { k:'Umwelt & Sonstiges', t:'Zahn ausgeschlagen', s:[
+    'Zahn nur an der Krone anfassen — niemals an der Wurzel',
+    'Nicht abwischen, nicht abwaschen, nicht trocken werden lassen',
+    'In eine Zahnrettungsbox legen (falls im Erste-Hilfe-Koffer)',
+    'Sonst: H-Milch, Kochsalzlösung oder Frischhaltefolie',
+    'Blutung: auf ein sauberes Tuch beißen lassen',
+    'So schnell wie möglich zum Zahnarzt — am besten innerhalb einer Stunde',
+  ], w:'Der Zahn kann oft wieder eingesetzt werden, wenn er feucht bleibt.' },
+];
+
+const UEBUNGS_SZENARIEN = [
+  // k = Kategorie (Gruppierung im Menü), t = Titel, o = Ort, d = Beschreibung
+  // Bewusst breit gestreut: verschiedene Symptome, Altersgruppen und Schweregrade.
+  // Neue Szenarien einfach hier ergänzen — sie erscheinen automatisch im Menü.
+
+  { k:'Bewusstsein & Kreislauf', t:'Bewusstlos, atmet normal', o:'Pausenhof',      d:'Schüler (13 J.) liegt am Boden, reagiert nicht auf Ansprache, atmet aber normal' },
+  { k:'Bewusstsein & Kreislauf', t:'Reanimation (große Übung)', o:'Sporthalle',    d:'Lehrer (54 J.) ist zusammengebrochen, reagiert nicht, keine normale Atmung' },
+  { k:'Bewusstsein & Kreislauf', t:'Kreislaufkollaps',          o:'Aula',          d:'Schülerin (16 J.) ist beim langen Stehen ohnmächtig geworden, kommt langsam wieder zu sich' },
+  { k:'Bewusstsein & Kreislauf', t:'Krampfanfall',              o:'Klassenzimmer', d:'Schüler (11 J.) krampft am Boden, Augen verdreht, Speichel am Mund' },
+  { k:'Bewusstsein & Kreislauf', t:'Schwindel & Kaltschweiß',   o:'Flur',          d:'Schüler (17 J.) ist blass und kaltschweißig, klagt über Schwindel, muss sich setzen' },
+
+  { k:'Atmung',      t:'Asthmaanfall',              o:'Sporthalle', d:'Schüler (12 J.) bekommt schlecht Luft, pfeifende Atmung, Inhalator nicht auffindbar' },
+  { k:'Atmung',      t:'Hyperventilation',          o:'Flur',       d:'Schülerin (15 J.) atmet sehr schnell, Kribbeln in Händen und Lippen, große Angst' },
+  { k:'Atmung',      t:'Verschlucken (hustet noch)',o:'Mensa',      d:'Schüler (10 J.) hustet stark, hält sich den Hals, bekommt aber noch Luft' },
+  { k:'Atmung',      t:'Verschlucken (kein Husten)',o:'Mensa',      d:'Schüler (11 J.) kann nicht mehr husten oder sprechen, greift sich an den Hals, läuft blau an' },
+  { k:'Atmung',      t:'Panikattacke',              o:'Flur',       d:'Schülerin (17 J.) vor der Prüfung: Herzrasen, Atemnot, Zittern, starke Angst' },
+
+  { k:'Blutungen & Wunden', t:'Starke Blutung Unterarm', o:'Werkraum',    d:'Schüler (16 J.) hat eine tiefe Schnittwunde am Unterarm, blutet stark' },
+  { k:'Blutungen & Wunden', t:'Platzwunde am Kopf',      o:'Treppenhaus', d:'Schüler (12 J.) ist die Treppe hinuntergestürzt, blutende Wunde an der Stirn, ansprechbar' },
+  { k:'Blutungen & Wunden', t:'Nasenbluten',             o:'Flur',        d:'Schüler (11 J.) hat starkes Nasenbluten nach einem Ballstoß, hört nicht auf' },
+  { k:'Blutungen & Wunden', t:'Schürfwunde',             o:'Pausenhof',   d:'Schülerin (10 J.) ist gestürzt, Knie aufgeschürft, weint und hat Angst' },
+  { k:'Blutungen & Wunden', t:'Fingerverletzung',        o:'Werkraum',    d:'Schüler (15 J.) hat sich den Finger eingeklemmt, blutet, Fingerkuppe verletzt' },
+
+  { k:'Knochen & Gelenke', t:'Verstauchter Knöchel',     o:'Sporthalle', d:'Schüler (14 J.) ist beim Basketball umgeknickt, Knöchel geschwollen, kann nicht auftreten' },
+  { k:'Knochen & Gelenke', t:'Geschlossener Bruch',      o:'Pausenhof',  d:'Schüler (13 J.) ist gestürzt, Unterarm fehlgestellt, starke Schmerzen' },
+  { k:'Knochen & Gelenke', t:'Offener Bruch',            o:'Sporthalle', d:'Schüler (16 J.) ist beim Turnen gestürzt, Knochen ist sichtbar, blutet' },
+  { k:'Knochen & Gelenke', t:'Schlüsselbein-Verdacht',   o:'Sportplatz', d:'Schüler (15 J.) nach Zusammenstoß: Schmerzen an der Schulter, Schonhaltung des Arms' },
+  { k:'Knochen & Gelenke', t:'Rippenprellung',           o:'Sportplatz', d:'Schüler (17 J.) hat nach einem Sturz Schmerzen beim Atmen' },
+
+  { k:'Verbrennung & Chemie', t:'Verbrennung Hand',     o:'Chemieraum', d:'Schülerin (16 J.) hat die Hand an einer heißen Platte verbrannt, Rötung und Blasen' },
+  { k:'Verbrennung & Chemie', t:'Verbrühung Arm',       o:'Mensa',      d:'Schüler (12 J.) hat sich heißen Tee über den Unterarm geschüttet' },
+  { k:'Verbrennung & Chemie', t:'Chemikalie ins Auge',  o:'Chemieraum', d:'Schüler (17 J.): Spritzer ins Auge, brennende Schmerzen, kneift das Auge zu' },
+  { k:'Verbrennung & Chemie', t:'Verätzung der Haut',   o:'Chemieraum', d:'Schülerin (17 J.) hat Chemikalie auf dem Unterarm, Haut rötet sich, brennt' },
+  { k:'Verbrennung & Chemie', t:'Dämpfe eingeatmet',    o:'Chemieraum', d:'Schüler (16 J.) hat Dämpfe eingeatmet, hustet, klagt über Schwindel' },
+
+  { k:'Innere Ursachen', t:'Unterzuckerung',        o:'Klassenzimmer', d:'Schülerin (13 J.), Diabetikerin: zittrig, blass, schwitzt, wirkt verwirrt' },
+  { k:'Innere Ursachen', t:'Überzuckerung',         o:'Klassenzimmer', d:'Schüler (15 J.), Diabetiker: großer Durst, muss oft aufs Klo, sehr müde' },
+  { k:'Innere Ursachen', t:'Starke Bauchschmerzen', o:'Klassenzimmer', d:'Schüler (12 J.) hat starke Bauchschmerzen rechts unten und ist übel' },
+  { k:'Innere Ursachen', t:'Migräne',               o:'Bibliothek',    d:'Schülerin (16 J.) hat starke Kopfschmerzen, ist lichtempfindlich und übel' },
+  { k:'Innere Ursachen', t:'Druck auf der Brust',   o:'Lehrerzimmer',  d:'Lehrer (58 J.) klagt über Druck auf der Brust, schwitzt, bekommt schlecht Luft' },
+  { k:'Innere Ursachen', t:'Schlaganfall-Verdacht', o:'Aula',          d:'Besucherin (67 J.): hängender Mundwinkel, verwaschene Sprache, ein Arm ist kraftlos' },
+
+  { k:'Allergie & Insekten', t:'Bienenstich',          o:'Pausenhof', d:'Schüler (11 J.) wurde am Arm gestochen, Schwellung und Schmerz, sonst wohlauf' },
+  { k:'Allergie & Insekten', t:'Stich im Mundraum',    o:'Pausenhof', d:'Schülerin (12 J.) wurde beim Trinken in die Lippe gestochen, Schwellung nimmt zu' },
+  { k:'Allergie & Insekten', t:'Anaphylaktischer Schock', o:'Mensa',  d:'Schülerin (14 J.) mit Nussallergie: Quaddeln, Schwellung im Gesicht, Atemnot' },
+
+  { k:'Umwelt & Sonstiges', t:'Sonnenstich',       o:'Sportplatz', d:'Schüler (10 J.) bei den Bundesjugendspielen: hochroter Kopf, Kopfschmerzen, Übelkeit' },
+  { k:'Umwelt & Sonstiges', t:'Hitzeerschöpfung',  o:'Sportplatz', d:'Schülerin (15 J.) ist blass, schwitzt stark, ist schwindelig und schlapp' },
+  { k:'Umwelt & Sonstiges', t:'Unterkühlung',      o:'Pausenhof',  d:'Schüler (13 J.) zittert stark, hat blaue Lippen und kalte Hände' },
+  { k:'Umwelt & Sonstiges', t:'Zahnunfall',        o:'Pausenhof',  d:'Schüler (12 J.): Zahn ausgeschlagen, blutet aus dem Mund, Zahn liegt daneben' },
+  { k:'Umwelt & Sonstiges', t:'Fremdkörper im Auge', o:'Werkraum', d:'Schüler (14 J.) hat etwas ins Auge bekommen, tränt stark, kneift zu' },
+  { k:'Umwelt & Sonstiges', t:'Stromschlag',       o:'Physikraum', d:'Schüler (17 J.) ist nach einem Stromschlag benommen, Hand schmerzt' },
+];
+
+let emIsDrill = false;
+
+function setEmCat(drill) {
+  emIsDrill = drill;
+  document.getElementById('em-cat-real').classList.toggle('active', !drill);
+  document.getElementById('em-cat-drill').classList.toggle('active', drill);
+  document.getElementById('em-scenario-area').classList.toggle('hidden', !drill);
+
+  // Fenster umfärben, damit sofort klar ist, worum es geht
+  const modal = document.querySelector('#emergency-modal .mc');
+  const titel = document.getElementById('em-modal-title');
+  const warn = document.getElementById('em-warnbox');
+  const btn = document.getElementById('send-emergency-btn');
+  if (drill) {
+    modal.style.borderTopColor = 'var(--accent)';
+    titel.innerHTML = '<span>🎓</span> ÜBUNG STARTEN';
+    titel.style.color = 'var(--accent)';
+    warn.style.cssText = 'background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.3);border-radius:10px;padding:11px 14px;margin-bottom:16px;font-size:.85rem;color:var(--accent)';
+    warn.textContent = '🎓 Übung: Die Sanis sehen deutlich, dass es kein echter Notfall ist. Keine SMS wird verschickt.';
+    btn.textContent = '🎓 ÜBUNG STARTEN';
+    btn.style.background = 'var(--accent)';
+  } else {
+    modal.style.borderTopColor = 'var(--accent3)';
+    titel.innerHTML = '<span style="animation:pulse-icon 1s infinite">🚨</span> NOTFALL AUSLÖSEN';
+    titel.style.color = 'var(--accent3)';
+    warn.style.cssText = 'background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:11px 14px;margin-bottom:16px;font-size:.85rem;color:var(--accent3)';
+    warn.textContent = '⚠️ Alle heute eingetragenen Sanis werden sofort benachrichtigt!';
+    btn.textContent = '🚨 NOTFALL BESTÄTIGEN';
+    btn.style.background = '';
+  }
+}
+window.setEmCat = setEmCat;
+
+function applyScenario() {
+  const i = document.getElementById('em-scenario').value;
+  if (i === '') return;
+  const s = UEBUNGS_SZENARIEN[Number(i)];
+  document.getElementById('em-desc').value = s.d;
+  document.getElementById('em-loc').value = s.o;
+}
+window.applyScenario = applyScenario;
+
+// Szenario-Liste einmalig füllen — nach Kategorien gruppiert, damit die
+// lange Liste übersichtlich bleibt
+(function fillScenarios() {
+  const sel = document.getElementById('em-scenario');
+  if (!sel) return;
+  const gruppen = {};
+  UEBUNGS_SZENARIEN.forEach((s, i) => {
+    (gruppen[s.k] = gruppen[s.k] || []).push({ s, i });
+  });
+  Object.keys(gruppen).forEach(k => {
+    const g = document.createElement('optgroup');
+    g.label = k;
+    gruppen[k].forEach(({ s, i }) => {
+      const o = document.createElement('option');
+      o.value = String(i);
+      o.textContent = `${s.t} — ${s.o}`;
+      g.appendChild(o);
+    });
+    sel.appendChild(g);
+  });
+})();
+
 // ── NOTFALL ───────────────────────────────────────────────────────────────────
 function openEmergency() {
   document.getElementById('em-desc').value = '';
@@ -2171,6 +2678,10 @@ function openEmergency() {
   document.querySelectorAll('.em-loc-btn').forEach(b => b.classList.remove('active'));
   updateEmPreview();
   document.getElementById('emergency-modal').classList.remove('hidden');
+  // Immer auf 'echter Notfall' zurückstellen — eine versehentlich stehen
+  // gebliebene Übungs-Auswahl im Ernstfall wäre fatal.
+  setEmCat(false);
+  const sel = document.getElementById('em-scenario'); if (sel) sel.value = '';
 }
 window.openEmergency = openEmergency;
 
@@ -2228,7 +2739,7 @@ document.getElementById('send-emergency-btn')?.addEventListener('click', async (
   // (falls eingerichtet) gleichzeitig versuchen.
   const [cloudResult, localEm] = await Promise.allSettled([
     insertEmergencyCloudWithRetry(
-      { triggered_by: CU.id, triggered_by_name: CU.name, description: desc, location: loc },
+      { triggered_by: CU.id, triggered_by_name: CU.name, description: desc, location: loc, is_drill: emIsDrill },
       (n, total) => { btn.textContent = `⏳ Wird gesendet... (Versuch ${n}/${total})`; }
     ),
     postLocalEmergency({ name: CU.name, location: loc, description: desc })
@@ -2240,15 +2751,19 @@ document.getElementById('send-emergency-btn')?.addEventListener('click', async (
     // Weder Internet noch lokaler Server erreichbar — letzter Ausweg: SMS-Entwurf
     // automatisch öffnen (fertig ausgefüllt, "Senden" muss man noch selbst tippen).
     const fallbackEm = { triggered_by_name: CU.name, location: loc, description: desc, triggered_at: now.toISOString() };
-    const smsLink = buildEmergencySmsLink(fallbackEm);
+    // Bei einer Übung bewusst KEINE SMS — eine Übung soll niemanden aufschrecken
+    // und keine echten Notruf-SMS auslösen.
+    const smsLink = emIsDrill ? null : buildEmergencySmsLink(fallbackEm);
     if (smsLink) {
       lastEmergencyForSms = fallbackEm;
       toast('❌ Kein Internet/Server erreichbar! Öffne SMS als Notlösung — bitte "Senden" tippen!', 'e', 9000);
       setTimeout(() => { window.location.href = smsLink; }, 400);
+    } else if (emIsDrill) {
+      toast('❌ Übung konnte nicht gestartet werden — kein Internet.', 'e', 6000);
     } else {
       toast('❌ Konnte nicht gesendet werden — kein Empfang UND keine SMS-Nummern hinterlegt (Sidebar → "Nummer eintragen"). Bitte Standort wechseln, nochmal versuchen, oder direkt Hilfe rufen!', 'e', 10000);
     }
-    btn.disabled = false; btn.textContent = '🚨 NOTFALL BESTÄTIGEN';
+    btn.disabled = false; btn.textContent = emIsDrill ? '🎓 ÜBUNG STARTEN' : '🚨 NOTFALL BESTÄTIGEN';
     return;
   }
 
@@ -2258,7 +2773,9 @@ document.getElementById('send-emergency-btn')?.addEventListener('click', async (
 
   // Nachricht in alle Chats senden (nutzt den Cloud-Kanal)
   if (cloudEm) {
-    const emMsg = `🚨 NOTFALL — ${CU.name} hat einen Notfall ausgelöst!\n📍 Ort: ${loc}\n⚠️ Was: ${desc}\n🕐 Zeit: ${timeStr} Uhr`;
+    const emMsg = emIsDrill
+      ? `🎓 ÜBUNG (kein echter Notfall) — ${CU.name} hat eine Übung gestartet.\n📍 Ort: ${loc}\n⚠️ Szenario: ${desc}\n🕐 Zeit: ${timeStr} Uhr`
+      : `🚨 NOTFALL — ${CU.name} hat einen Notfall ausgelöst!\n📍 Ort: ${loc}\n⚠️ Was: ${desc}\n🕐 Zeit: ${timeStr} Uhr`;
     for (const contact of contacts) {
       const m = { contact_id: contact.id, sender_id: CU.id, sender_name: CU.name, text: emMsg, type: 'emergency' };
       const { data } = await sb.from('chat_messages').insert(m).select().single();
@@ -2323,6 +2840,13 @@ function showEmergencyBanner(em) {
   const banner = document.getElementById('emergency-banner');
   const bannerText = document.getElementById('banner-text');
   if (!banner) return;
+  // Übung deutlich anders aussehen lassen als ein echter Notfall — sonst rennt
+  // jemand bei einer Übung los oder hält einen echten Notfall für eine Übung.
+  const drill = !!em.is_drill;
+  banner.style.background = drill ? 'var(--accent)' : 'var(--accent3)';
+  banner.style.boxShadow = drill ? '0 4px 20px rgba(79,142,247,.5)' : '0 4px 20px rgba(248,113,113,.5)';
+  const titel = banner.querySelector('strong');
+  if (titel) titel.textContent = drill ? '🎓 ÜBUNG — kein echter Notfall' : 'NOTFALL AKTIV';
   bannerText.textContent = `${em.triggered_by_name} | Ort: ${em.location} | ${em.description}`;
   banner.style.display = 'flex';
   // App-Inhalt nach unten verschieben
@@ -2379,7 +2903,9 @@ function subscribeToEmergencies() {
         if (!isDuplicateEmergency(em.triggered_by_name, em.location, em.description)) {
           if (meOnDuty) {
             showCallScreen(em);
-            sendPushNotification(`🚨 NOTFALL von ${em.triggered_by_name}!`, `📍 Ort: ${em.location} | ⚠️ ${em.description}`, 'sani-notfall');
+            sendPushNotification(
+              em.is_drill ? `🎓 ÜBUNG von ${em.triggered_by_name}` : `🚨 NOTFALL von ${em.triggered_by_name}!`,
+              `📍 Ort: ${em.location} | ⚠️ ${em.description}`, 'sani-notfall');
           }
         }
         // Der stille Banner erscheint für alle, die die App gerade offen haben
