@@ -1053,6 +1053,18 @@ async function startApp(session) {
 
 async function refreshData(uid) {
   try {
+    // WICHTIG: auch das Profil frisch laden — sonst bleibt eine im Cache
+    // gespeicherte alte Rolle (z.B. "Schüler") hängen, obwohl man längst
+    // Lehrer ist. Das war der Grund, warum Freischalten "nichts brachte".
+    const { data: prof } = await sb.from('profiles').select('*').eq('id', uid).single();
+    if (prof) {
+      if (prof.blocked) {   // zwischenzeitlich blockiert? -> raus
+        await sb.auth.signOut(); location.reload(); return;
+      }
+      const rolleVorher = CU?.role;
+      CU = prof;
+      if (CU.role !== rolleVorher) applyProfile();  // Reiter/Knöpfe neu setzen
+    }
     await Promise.all([loadAppts(), loadGoals(), loadCheckEntries(), loadContacts(), loadSaniPhones(), loadDutyToday()]);
     saveCache();
     renderDash(); renderUpcoming();
