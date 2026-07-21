@@ -348,6 +348,15 @@ body.teacher button.to{display:inline-flex;}
   </div>
 </div>
 
+<div id="useradmin-modal" class="modal hidden">
+  <div class="mc" style="max-width:460px">
+    <div class="mh"><h2>👥 Nutzer verwalten</h2><button class="mx close-m">&times;</button></div>
+    <p style="font-size:.83rem;color:var(--text2);margin-bottom:12px;line-height:1.5">Blockierte Nutzer kommen nicht mehr in die App — z.B. wenn jemand die Schule verlässt. Rückgängig machen geht jederzeit.</p>
+    <input type="text" id="ua-search" placeholder="🔍 Name suchen" style="width:100%;margin-bottom:12px">
+    <div id="ua-list" style="max-height:50vh;overflow-y:auto"></div>
+  </div>
+</div>
+
 <div id="claim-role-modal" class="modal hidden">
   <div class="mc" style="max-width:380px">
     <div class="mh"><h2>🔐 Rolle freischalten</h2><button class="mx close-m">&times;</button></div>
@@ -554,6 +563,7 @@ body.teacher button.to{display:inline-flex;}
         <div><div class="uname" id="uname">–</div><div class="urole" id="urole">–</div></div>
       </div>
       <div class="u-actions">
+        <button class="btn-ghost to" style="display:none" onclick="openUserAdmin()">👥 Nutzer verwalten</button>
         <button class="btn-ghost" onclick="openClaimRoleModal()">Rolle freischalten</button>
         <button class="btn-ghost" onclick="doLogout()">Abmelden</button>
       </div>
@@ -995,6 +1005,15 @@ async function startApp(session) {
   if (!usedCache) {
     // ── Kein Cache — normal laden ──
     const { data: prof } = await sb.from('profiles').select('*').eq('id', uid).single();
+    // Blockierte Nutzer sofort wieder hinauswerfen (z.B. Schulabgänger).
+    if (prof && prof.blocked) {
+      await sb.auth.signOut();
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('auth-wrap').style.display = 'flex';
+      toast('Dieser Zugang wurde deaktiviert. Bitte wende dich an die AG-Leitung.', 'e', 12000);
+      return;
+    }
     if (!prof) {
       const meta = session.user.user_metadata;
       await sb.from('profiles').upsert({ id: uid, name: meta.name||'Nutzer', role: meta.role||'Schüler' });
@@ -2162,6 +2181,56 @@ function openPhoneModal() {
   document.getElementById('phone-modal').classList.remove('hidden');
 }
 window.openPhoneModal = openPhoneModal;
+
+// ── NUTZERVERWALTUNG (nur Lehrer): blockieren / entsperren ────────────────────
+let uaUsers = [];
+async function openUserAdmin() {
+  document.getElementById('useradmin-modal').classList.remove('hidden');
+  document.getElementById('ua-search').value = '';
+  document.getElementById('ua-list').innerHTML = '<p style="color:var(--text2);font-size:.85rem;text-align:center;padding:20px">Lädt…</p>';
+  const { data, error } = await sb.from('profiles').select('id,name,role,blocked').order('name');
+  if (error) {
+    document.getElementById('ua-list').innerHTML = '<p style="color:var(--accent3);font-size:.83rem;padding:14px">Fehler beim Laden: ' + (error.message||'') + '<br><br>Wurde blockieren.sql schon in Supabase ausgeführt?</p>';
+    return;
+  }
+  uaUsers = data || [];
+  renderUserAdmin();
+}
+window.openUserAdmin = openUserAdmin;
+
+function renderUserAdmin() {
+  const q = document.getElementById('ua-search').value.trim().toLowerCase();
+  const box = document.getElementById('ua-list');
+  const liste = uaUsers.filter(u => !q || (u.name||'').toLowerCase().includes(q));
+  if (!liste.length) { box.innerHTML = '<p style="color:var(--text2);font-size:.85rem;text-align:center;padding:20px">Niemand gefunden.</p>'; return; }
+  box.innerHTML = liste.map(u => {
+    const selbst = u.id === CU?.id;
+    const geblockt = !!u.blocked;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:7px;${geblockt?'background:rgba(248,113,113,.08)':''}">
+      <div style="min-width:0">
+        <div style="font-weight:600;font-size:.9rem">${esc(u.name||'?')}${selbst?' <span style=\"color:var(--text2);font-weight:400\">(du)</span>':''}</div>
+        <div style="font-size:.76rem;color:var(--text2)">${esc(u.role||'Schüler')}${geblockt?' · 🚫 blockiert':''}</div>
+      </div>
+      ${selbst ? '' : geblockt
+        ? `<button onclick="setBlocked('${u.id}',false)" style="background:var(--accent2);color:#04241a;border:none;border-radius:8px;padding:8px 13px;font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;flex-shrink:0">Entsperren</button>`
+        : `<button onclick="setBlocked('${u.id}',true)" style="background:var(--accent3);color:#fff;border:none;border-radius:8px;padding:8px 13px;font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;flex-shrink:0">Blockieren</button>`
+      }
+    </div>`;
+  }).join('');
+}
+document.getElementById('ua-search')?.addEventListener('input', renderUserAdmin);
+
+async function setBlocked(id, block) {
+  const u = uaUsers.find(x => x.id === id);
+  const name = u ? u.name : 'dieser Nutzer';
+  if (block && !confirm(`"${name}" wirklich blockieren?\n\nDie Person kommt dann nicht mehr in die App.`)) return;
+  const { data, error } = await sb.rpc('set_user_blocked', { target_id: id, block });
+  if (error) { toast('Fehlgeschlagen: ' + (error.message||''), 'e', 8000); return; }
+  if (u) u.blocked = block;
+  renderUserAdmin();
+  toast(block ? `🚫 ${name} wurde blockiert.` : `✓ ${name} ist wieder freigeschaltet.`, 's');
+}
+window.setBlocked = setBlocked;
 
 async function savePhoneNumber() {
   const val = document.getElementById('phone-input').value.trim();
