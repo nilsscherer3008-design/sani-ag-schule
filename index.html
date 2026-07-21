@@ -2819,14 +2819,23 @@ function updateEmPreview() {
 // ein späterer aber durchgeht.
 async function insertEmergencyCloudWithRetry(payload, onAttempt) {
   const delays = [0, 1200, 2500, 5000]; // insgesamt bis zu ~9s, 4 Versuche
+  let letzterFehler = null;
   for (let i = 0; i < delays.length; i++) {
     if (delays[i]) await new Promise(r => setTimeout(r, delays[i]));
     if (onAttempt) onAttempt(i + 1, delays.length);
     try {
       const { data, error } = await sb.from('emergencies').insert(payload).select().single();
       if (!error && data) return data;
-    } catch (e) {}
+      if (error) {
+        letzterFehler = error;
+        console.error('[Notfall] Speichern fehlgeschlagen:', error);
+        // Bei einem echten Datenfehler (z.B. fehlende Spalte) bringt Wiederholen
+        // nichts — sofort abbrechen statt 4x dasselbe zu versuchen.
+        if (error.code && error.code !== 'PGRST000') break;
+      }
+    } catch (e) { letzterFehler = e; console.error('[Notfall] Netzwerkfehler:', e); }
   }
+  window.__letzterNotfallFehler = letzterFehler;
   return null;
 }
 
@@ -2867,7 +2876,9 @@ document.getElementById('send-emergency-btn')?.addEventListener('click', async (
       toast('❌ Kein Internet/Server erreichbar! Öffne SMS als Notlösung — bitte "Senden" tippen!', 'e', 9000);
       setTimeout(() => { window.location.href = smsLink; }, 400);
     } else if (emIsDrill) {
-      toast('❌ Übung konnte nicht gestartet werden — kein Internet.', 'e', 6000);
+      const f = window.__letzterNotfallFehler;
+      const grund = f ? (f.message || f.code || 'unbekannt') : 'unbekannt';
+      toast('❌ Übung fehlgeschlagen: ' + grund + (f && String(f.message||'').includes('is_drill') ? ' — die Spalte "is_drill" fehlt in der Datenbank (siehe uebung-spalte.sql).' : ''), 'e', 11000);
     } else {
       toast('❌ Konnte nicht gesendet werden — kein Empfang UND keine SMS-Nummern hinterlegt (Sidebar → "Nummer eintragen"). Bitte Standort wechseln, nochmal versuchen, oder direkt Hilfe rufen!', 'e', 10000);
     }
