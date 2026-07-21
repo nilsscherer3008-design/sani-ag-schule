@@ -307,6 +307,12 @@ body.teacher button.to{display:inline-flex;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 </style>
+
+<style id="orga-mode">
+  #emergency-fab { display: none !important; }
+  .nav-item[data-v="training"] { display: none !important; }
+  #v-sekretariat button[onclick*="openEmergency"] { display: none !important; }
+</style>
 </head>
 <body>
 <div id="toasts"></div>
@@ -1068,18 +1074,25 @@ function applyProfile() {
 // Sekretariat-Konten dürfen NUR den Notfall auslösen — keine Termine, keinen Kalender,
 // keinen Chat und auch nicht "Erledigt" bestätigen (das bleibt den Sanis vorbehalten).
 function applySekretariatMode(active) {
-  document.querySelectorAll('nav .nav-item').forEach(b => b.style.display = active ? 'none' : '');
-  document.getElementById('upcoming-card').style.display = active ? 'none' : '';
-  document.querySelector('.cal-nav').style.display = active ? 'none' : '';
-  document.getElementById('month-info').style.display = active ? 'none' : '';
-  document.getElementById('emergency-fab').style.display = active ? 'none' : '';
-  const resolveBtn = document.getElementById('resolve-btn');
-  if (resolveBtn) resolveBtn.style.display = active ? 'none' : '';
-  if (active) {
-    VIEWS.forEach(x => document.getElementById('v-'+x).classList.add('hidden'));
-    document.getElementById('v-sekretariat').classList.remove('hidden');
-  } else {
-    document.getElementById('v-sekretariat').classList.add('hidden');
+  // Absturzsicher: jedes Element kann in manchen Versionen fehlen (z.B. wenn der
+  // Notfall-Teil entfernt wurde). Deshalb vor jedem Zugriff prüfen.
+  const setDisp = (id, val) => { const el = document.getElementById(id); if (el) el.style.display = val; };
+  const setDispSel = (sel, val) => { const el = document.querySelector(sel); if (el) el.style.display = val; };
+  const hide = active ? 'none' : '';
+
+  document.querySelectorAll('nav .nav-item').forEach(b => b.style.display = hide);
+  setDisp('upcoming-card', hide);
+  setDispSel('.cal-nav', hide);
+  setDisp('month-info', hide);
+  setDisp('emergency-fab', hide);
+  setDisp('resolve-btn', hide);
+
+  const vsek = document.getElementById('v-sekretariat');
+  if (active && vsek) {
+    VIEWS.forEach(x => { const el = document.getElementById('v-'+x); if (el) el.classList.add('hidden'); });
+    vsek.classList.remove('hidden');
+  } else if (vsek) {
+    vsek.classList.add('hidden');
   }
 }
 
@@ -1278,11 +1291,13 @@ function iChecked(ds,gid) { return checkEntries.some(e=>e.date===ds&&e.goal_id==
 async function toggleCheck(ds,gid) {
   if(isHolidayOrFerien(ds)) { toast('🚫 An Ferien und Feiertagen nicht möglich!', 'e', 3000); return; }
   if(iChecked(ds,gid)) {
-    await sb.from('check_entries').delete().eq('date',ds).eq('goal_id',gid).eq('user_id',CU.id);
+    const { error } = await sb.from('check_entries').delete().eq('date',ds).eq('goal_id',gid).eq('user_id',CU.id);
+    if (error) { toast('Austragen fehlgeschlagen: ' + (error.message||''), 'e', 8000); console.error('check delete:', error); return; }
     checkEntries = checkEntries.filter(e=>!(e.date===ds&&e.goal_id===gid&&e.user_id===CU.id));
   } else {
     const entry={date:ds,goal_id:gid,user_id:CU.id,user_name:CU.name};
-    await sb.from('check_entries').insert(entry);
+    const { error } = await sb.from('check_entries').insert(entry);
+    if (error) { toast('Eintragen fehlgeschlagen: ' + (error.message||''), 'e', 9000); console.error('check insert:', error); return; }
     checkEntries.push(entry);
   }
   renderCheck(); renderDash();
