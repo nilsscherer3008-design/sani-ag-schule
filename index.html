@@ -2217,14 +2217,32 @@ function renderUserAdmin() {
         <div style="font-weight:600;font-size:.9rem">${esc(u.name||'?')}${selbst?' <span style=\"color:var(--text2);font-weight:400\">(du)</span>':''}</div>
         <div style="font-size:.76rem;color:var(--text2)">${esc(u.role||'Schüler')}${geblockt?' · 🚫 blockiert':''}</div>
       </div>
-      ${selbst ? '' : geblockt
-        ? `<button onclick="setBlocked('${u.id}',false)" style="background:var(--accent2);color:#04241a;border:none;border-radius:8px;padding:8px 13px;font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;flex-shrink:0">Entsperren</button>`
-        : `<button onclick="setBlocked('${u.id}',true)" style="background:var(--accent3);color:#fff;border:none;border-radius:8px;padding:8px 13px;font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;flex-shrink:0">Blockieren</button>`
+      ${selbst ? '' : `<div style="display:flex;gap:6px;flex-shrink:0">
+        ${geblockt
+          ? `<button onclick="setBlocked('${u.id}',false)" style="background:var(--accent2);color:#04241a;border:none;border-radius:8px;padding:8px 13px;font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer">Entsperren</button>`
+          : `<button onclick="setBlocked('${u.id}',true)" style="background:var(--accent3);color:#fff;border:none;border-radius:8px;padding:8px 13px;font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer">Blockieren</button>`
+        }
+        <button onclick="deleteUser('${u.id}')" title="Endgültig löschen" style="background:transparent;color:var(--accent3);border:1px solid var(--accent3);border-radius:8px;padding:8px 11px;font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer">🗑️</button>
+      </div>`
       }
     </div>`;
   }).join('');
 }
 document.getElementById('ua-search')?.addEventListener('input', renderUserAdmin);
+
+async function deleteUser(id) {
+  const u = uaUsers.find(x => x.id === id);
+  const name = u ? u.name : 'dieser Nutzer';
+  // Doppelte Sicherheitsabfrage, weil Löschen NICHT rückgängig zu machen ist
+  if (!confirm(`"${name}" ENDGÜLTIG löschen?\n\n⚠️ Das kann NICHT rückgängig gemacht werden. Alle Einträge und Nachrichten dieser Person werden entfernt.\n\n(Zum nur vorübergehenden Sperren lieber "Blockieren" nehmen.)`)) return;
+  if (!confirm(`Wirklich sicher? "${name}" wird unwiderruflich gelöscht.`)) return;
+  const { error } = await sb.rpc('delete_user', { target_id: id });
+  if (error) { toast('Löschen fehlgeschlagen: ' + (error.message||''), 'e', 8000); return; }
+  uaUsers = uaUsers.filter(x => x.id !== id);
+  renderUserAdmin();
+  toast(`🗑️ ${name} wurde gelöscht.`, 's');
+}
+window.deleteUser = deleteUser;
 
 async function setBlocked(id, block) {
   const u = uaUsers.find(x => x.id === id);
