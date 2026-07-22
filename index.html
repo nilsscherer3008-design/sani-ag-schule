@@ -1011,8 +1011,19 @@ async function startApp(session) {
     }
     if (!prof) {
       const meta = session.user.user_metadata;
-      await sb.from('profiles').upsert({ id: uid, name: meta.name||'Nutzer', role: meta.role||'Schüler' });
-      CU = { id: uid, name: meta.name||'Nutzer', role: meta.role||'Schüler' };
+      const neuesProfil = { id: uid, name: meta.name||'Nutzer', role: meta.role||'Schüler' };
+      const { error: profErr } = await sb.from('profiles').upsert(neuesProfil);
+      if (profErr) {
+        // Ohne Profil funktioniert nichts (Notfall, Chat, Dienst) -> ehrlich melden
+        console.error('[Profil anlegen] fehlgeschlagen:', profErr);
+        document.getElementById('loading').style.display = 'none';
+        toast('Dein Profil konnte nicht angelegt werden: ' + (profErr.message||'') + ' — bitte der AG-Leitung melden.', 'e', 15000);
+        // Trotzdem versuchen, das Profil erneut zu laden (evtl. per Trigger angelegt)
+        const { data: retry } = await sb.from('profiles').select('*').eq('id', uid).single();
+        if (!retry) { CU = neuesProfil; } else { CU = retry; }
+      } else {
+        CU = neuesProfil;
+      }
     } else { CU = prof; }
     await Promise.all([loadAppts(), loadGoals(), loadCheckEntries(), loadContacts(), loadSaniPhones(), loadDutyToday()]);
     saveCache();
@@ -3038,19 +3049,32 @@ function subscribeToEmergencies() {
         // Frisch prüfen ob ICH heute im Dienst bin — nur dann laut klingeln
         await loadDutyToday();
         const meOnDuty = amIOnDutyToday();
-        if (!isDuplicateEmergency(em.triggered_by_name, em.location, em.description)) {
-          if (meOnDuty) {
-            showCallScreen(em);
-            sendPushNotification(
-              em.is_drill ? `🎓 ÜBUNG von ${em.triggered_by_name}` : `🚨 NOTFALL von ${em.triggered_by_name}!`,
-              `📍 Ort: ${em.location} | ⚠️ ${em.description}`, 'sani-notfall');
-          }
+        const schonGezeigt = callEmergencyData && callEmergencyData.id === em.id;
+        if (meOnDuty && !schonGezeigt) {
+          // Laut klingeln + Anruf-Bildschirm. Bewusst NICHT von der
+          // Duplikat-Signatur abhängig — die hat früher den echten Alarm
+          // unterdrückt, weil die Signatur schon beim Banner gesetzt wurde.
+          showCallScreen(em);
+          sendPushNotification(
+            em.is_drill ? `🎓 ÜBUNG von ${em.triggered_by_name}` : `🚨 NOTFALL von ${em.triggered_by_name}!`,
+            `📍 Ort: ${em.location} | ⚠️ ${em.description}`, 'sani-notfall');
+        } else if (!meOnDuty) {
+          if (typeof toast === 'function') toast('🔔 Notfall empfangen — aber du bist heute nicht im Check-Kalender eingetragen, daher kein lauter Alarm.', 'e', 9000);
         }
         // Der stille Banner erscheint für alle, die die App gerade offen haben
         showEmergencyBanner(em);
       }
     })
-    .subscribe();
+    .subscribe((status) => {
+      // Sichtbare Rückmeldung, damit man auch am Handy (ohne F12) sieht, ob die
+      // Live-Verbindung für Notfälle wirklich steht.
+      if (status === 'SUBSCRIBED') {
+        console.log('[Notfall] Live-Verbindung steht ✓');
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        console.warn('[Notfall] Live-Verbindung Problem:', status);
+        if (typeof toast === 'function') toast('⚠️ Notfall-Live-Verbindung: ' + status + ' — Alarme kommen evtl. nicht an. App neu laden.', 'e', 8000);
+      }
+    });
 }
 
 // Bei schwachem Empfang kann die Realtime-Verbindung lautlos abreißen. Sobald
