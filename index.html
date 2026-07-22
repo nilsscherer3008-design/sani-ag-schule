@@ -426,6 +426,7 @@ body.teacher button.to{display:inline-flex;}
       <select id="em-scenario" onchange="applyScenario()">
         <option value="">— eigenes Szenario eintippen —</option>
       </select>
+      <div id="em-loesung" class="hidden" style="margin-top:9px;background:rgba(110,231,183,.08);border-left:3px solid var(--accent2);border-radius:0 8px 8px 0;padding:10px 12px;font-size:.82rem;line-height:1.6;color:var(--text)"></div>
     </div>
     <div class="fg">
       <label>Was ist passiert?</label>
@@ -2427,13 +2428,19 @@ function renderTraining(filter) {
       html += `<div style="font-size:.75rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 7px">${esc(s.k)}</div>`;
       letzteKat = s.k;
     }
-    html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;flex-wrap:wrap">
-      <div style="flex:1;min-width:190px">
-        <div style="font-weight:600;font-size:.9rem">${esc(s.t)}</div>
-        <div style="font-size:.79rem;color:var(--text2);margin-top:2px;line-height:1.45">${esc(s.d)}</div>
-        <div style="font-size:.75rem;color:var(--text2);margin-top:3px">📍 ${esc(s.o)}</div>
+    html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:7px">
+      <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap">
+        <div style="flex:1;min-width:190px">
+          <div style="font-weight:600;font-size:.9rem">${esc(s.t)}</div>
+          <div style="font-size:.79rem;color:var(--text2);margin-top:2px;line-height:1.45">${esc(s.d)}</div>
+          <div style="font-size:.75rem;color:var(--text2);margin-top:3px">📍 ${esc(s.o)}</div>
+        </div>
+        <button onclick="startTrainingFromList(${i})" style="background:var(--accent);color:#fff;border:none;border-radius:9px;padding:9px 15px;font-family:'Outfit',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;flex-shrink:0">🎓 Starten</button>
       </div>
-      <button onclick="startTrainingFromList(${i})" style="background:var(--accent);color:#fff;border:none;border-radius:9px;padding:9px 15px;font-family:'Outfit',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;flex-shrink:0">🎓 Starten</button>
+      ${s.l ? `<details style="margin-top:9px">
+        <summary style="cursor:pointer;font-size:.8rem;font-weight:600;color:var(--accent2);list-style:none">💡 Lösung anzeigen</summary>
+        <div style="margin-top:7px;background:rgba(110,231,183,.08);border-left:3px solid var(--accent2);border-radius:0 8px 8px 0;padding:10px 12px;font-size:.82rem;line-height:1.6;color:var(--text)">${esc(s.l)}</div>
+      </details>` : ''}
     </div>`;
   }
   box.innerHTML = html;
@@ -2449,8 +2456,7 @@ function startTrainingFromList(i) {
   openEmergency();
   setEmCat(true);
   document.getElementById('em-scenario').value = String(i);
-  document.getElementById('em-desc').value = s.d;
-  document.getElementById('em-loc').value = s.o;
+  applyScenario();  // füllt Beschreibung, Ort UND zeigt die Lösung
 }
 window.startTrainingFromList = startTrainingFromList;
 
@@ -2666,53 +2672,53 @@ const UEBUNGS_SZENARIEN = [
   // Bewusst breit gestreut: verschiedene Symptome, Altersgruppen und Schweregrade.
   // Neue Szenarien einfach hier ergänzen — sie erscheinen automatisch im Menü.
 
-  { k:'Bewusstsein & Kreislauf', t:'Bewusstlos, atmet normal', o:'Pausenhof',      d:'Schüler (13 J.) liegt am Boden, reagiert nicht auf Ansprache, atmet aber normal' },
-  { k:'Bewusstsein & Kreislauf', t:'Reanimation (große Übung)', o:'Sporthalle',    d:'Lehrer (54 J.) ist zusammengebrochen, reagiert nicht, keine normale Atmung' },
-  { k:'Bewusstsein & Kreislauf', t:'Kreislaufkollaps',          o:'Aula',          d:'Schülerin (16 J.) ist beim langen Stehen ohnmächtig geworden, kommt langsam wieder zu sich' },
-  { k:'Bewusstsein & Kreislauf', t:'Krampfanfall',              o:'Klassenzimmer', d:'Schüler (11 J.) krampft am Boden, Augen verdreht, Speichel am Mund' },
-  { k:'Bewusstsein & Kreislauf', t:'Schwindel & Kaltschweiß',   o:'Flur',          d:'Schüler (17 J.) ist blass und kaltschweißig, klagt über Schwindel, muss sich setzen' },
+  { k:'Bewusstsein & Kreislauf', t:'Bewusstlos, atmet normal', o:'Pausenhof',      d:'Schüler (13 J.) liegt am Boden, reagiert nicht auf Ansprache, atmet aber normal', l:'Prüfen: ansprechen, an Schultern rütteln. Keine Reaktion → laut Hilfe rufen. Atmung prüfen (Kopf überstrecken, max. 10 Sek. sehen/hören/fühlen). Atmet normal → stabile Seitenlage, 112 rufen (lassen), zudecken, Atmung dauerhaft kontrollieren. Wichtig: Bei jeder Bewusstlosigkeit Seitenlage, damit nichts in die Atemwege läuft.' },
+  { k:'Bewusstsein & Kreislauf', t:'Reanimation (große Übung)', o:'Sporthalle',    d:'Lehrer (54 J.) ist zusammengebrochen, reagiert nicht, keine normale Atmung', l:'Prüfen–Rufen–Drücken. Keine normale Atmung → sofort 112 (Lautsprecher) + AED holen lassen. Herzdruckmassage: Mitte Brustkorb, 5–6 cm tief, 100–120/min, vollständig entlasten. Wenn geübt: 30:2 mit Beatmung, sonst durchgehend drücken. AED sofort einsetzen, Ansagen folgen. Nicht aufhören bis Rettungsdienst übernimmt. Zu zweit alle 2 Min wechseln. Schnappatmung zählt als „nicht normal".' },
+  { k:'Bewusstsein & Kreislauf', t:'Kreislaufkollaps',          o:'Aula',          d:'Schülerin (16 J.) ist beim langen Stehen ohnmächtig geworden, kommt langsam wieder zu sich', l:'Meist harmlose Ohnmacht. Flach hinlegen, Beine hochlagern (fördert Blutfluss zum Kopf). Enge Kleidung öffnen, frische Luft. Kommt sie zu sich: liegen lassen, langsam aufrichten. Bleibt sie länger bewusstlos oder atmet auffällig → Seitenlage + 112. Auf Verletzungen durch den Sturz achten.' },
+  { k:'Bewusstsein & Kreislauf', t:'Krampfanfall',              o:'Klassenzimmer', d:'Schüler (11 J.) krampft am Boden, Augen verdreht, Speichel am Mund', l:'NICHT festhalten, nichts in den Mund. Umgebung sichern, Kopf weich polstern, Gefährliches wegräumen. Uhrzeit merken. Nach dem Krampf: Bewusstsein/Atmung prüfen → stabile Seitenlage. Dabeibleiben (Person ist verwirrt). 112 beim ersten Anfall, bei Dauer über 5 Min oder wenn er sich wiederholt.' },
+  { k:'Bewusstsein & Kreislauf', t:'Schwindel & Kaltschweiß',   o:'Flur',          d:'Schüler (17 J.) ist blass und kaltschweißig, klagt über Schwindel, muss sich setzen', l:'Hinsetzen oder hinlegen, beruhigen. Blässe + Kaltschweiß können Kreislauf oder beginnender Schock sein. Beine hoch, warm halten, nicht allein lassen. Nach Vorerkrankungen fragen (Diabetes?). Bei Verschlechterung, Bewusstseinstrübung oder Brustschmerz → 112.' },
 
-  { k:'Atmung',      t:'Asthmaanfall',              o:'Sporthalle', d:'Schüler (12 J.) bekommt schlecht Luft, pfeifende Atmung, Inhalator nicht auffindbar' },
-  { k:'Atmung',      t:'Hyperventilation',          o:'Flur',       d:'Schülerin (15 J.) atmet sehr schnell, Kribbeln in Händen und Lippen, große Angst' },
-  { k:'Atmung',      t:'Verschlucken (hustet noch)',o:'Mensa',      d:'Schüler (10 J.) hustet stark, hält sich den Hals, bekommt aber noch Luft' },
-  { k:'Atmung',      t:'Verschlucken (kein Husten)',o:'Mensa',      d:'Schüler (11 J.) kann nicht mehr husten oder sprechen, greift sich an den Hals, läuft blau an' },
-  { k:'Atmung',      t:'Panikattacke',              o:'Flur',       d:'Schülerin (17 J.) vor der Prüfung: Herzrasen, Atemnot, Zittern, starke Angst' },
+  { k:'Atmung',      t:'Asthmaanfall',              o:'Sporthalle', d:'Schüler (12 J.) bekommt schlecht Luft, pfeifende Atmung, Inhalator nicht auffindbar', l:'Ruhe bewahren, beruhigen (Angst verschlimmert). Aufrecht hinsetzen, Kutschersitz (vorbeugen, Arme aufstützen). Eigenes Notfallspray nehmen lassen. Lippenbremse: langsam gegen fast geschlossene Lippen ausatmen. Fenster auf. Keine Besserung, blaue Lippen oder Sprechen unmöglich → 112. Nicht hinlegen!' },
+  { k:'Atmung',      t:'Hyperventilation',          o:'Flur',       d:'Schülerin (15 J.) atmet sehr schnell, Kribbeln in Händen und Lippen, große Angst', l:'Beruhigen, das ist selten gefährlich. Ruhig und langsam sprechen, Blickkontakt. Zum langsamen Atmen anleiten (z.B. mitzählen). Angst nehmen. Nicht in eine Tüte atmen lassen (veraltet, kann schaden). Hält es an oder ist unklar ob Asthma/Herz dahinter → ärztlich abklären.' },
+  { k:'Atmung',      t:'Verschlucken (hustet noch)',o:'Mensa',      d:'Schüler (10 J.) hustet stark, hält sich den Hals, bekommt aber noch Luft', l:'Solange kräftig gehustet wird: Husten lassen, das ist der beste Mechanismus. Dabeibleiben, beruhigen, zum Weiterhusten ermutigen. NICHT auf den Rücken schlagen, solange Husten funktioniert. Verschlechtert es sich (kein Husten mehr) → sofort zu Schlägen/Heimlich übergehen.' },
+  { k:'Atmung',      t:'Verschlucken (kein Husten)',o:'Mensa',      d:'Schüler (11 J.) kann nicht mehr husten oder sprechen, greift sich an den Hals, läuft blau an', l:'Notfall! 5 kräftige Schläge zwischen die Schulterblätter (Oberkörper vornüber). Ohne Erfolg: 5× Heimlich-Handgriff (Oberbauch ruckartig nach innen-oben). Im Wechsel weiter. 112 rufen lassen. Wird die Person bewusstlos → sofort mit Wiederbelebung beginnen. Danach immer zum Arzt.' },
+  { k:'Atmung',      t:'Panikattacke',              o:'Flur',       d:'Schülerin (17 J.) vor der Prüfung: Herzrasen, Atemnot, Zittern, starke Angst', l:'Ruhe ausstrahlen, in einen ruhigeren Bereich gehen. Langsam und klar sprechen, beim langsamen Atmen helfen. Nicht bedrängen, Nähe anbieten aber nicht aufzwingen. Versichern, dass es vorübergeht. Bei Brustschmerz/Atemnot, die nicht nachlässt, oder Unsicherheit → ärztlich abklären.' },
 
-  { k:'Blutungen & Wunden', t:'Starke Blutung Unterarm', o:'Werkraum',    d:'Schüler (16 J.) hat eine tiefe Schnittwunde am Unterarm, blutet stark' },
-  { k:'Blutungen & Wunden', t:'Platzwunde am Kopf',      o:'Treppenhaus', d:'Schüler (12 J.) ist die Treppe hinuntergestürzt, blutende Wunde an der Stirn, ansprechbar' },
-  { k:'Blutungen & Wunden', t:'Nasenbluten',             o:'Flur',        d:'Schüler (11 J.) hat starkes Nasenbluten nach einem Ballstoß, hört nicht auf' },
-  { k:'Blutungen & Wunden', t:'Schürfwunde',             o:'Pausenhof',   d:'Schülerin (10 J.) ist gestürzt, Knie aufgeschürft, weint und hat Angst' },
-  { k:'Blutungen & Wunden', t:'Fingerverletzung',        o:'Werkraum',    d:'Schüler (15 J.) hat sich den Finger eingeklemmt, blutet, Fingerkuppe verletzt' },
+  { k:'Blutungen & Wunden', t:'Starke Blutung Unterarm', o:'Werkraum',    d:'Schüler (16 J.) hat eine tiefe Schnittwunde am Unterarm, blutet stark', l:'Handschuhe! Person hinsetzen/hinlegen. Sofort direkt auf die Wunde drücken (Verbandmaterial oder Hand). Druckverband: Wundauflage, 2 Runden wickeln, Druckpolster drauf, fest weiter. Blutet es durch → zweiter Verband über den ersten. Arm hochhalten, 112, auf Schock achten (blass, kaltschweißig).' },
+  { k:'Blutungen & Wunden', t:'Platzwunde am Kopf',      o:'Treppenhaus', d:'Schüler (12 J.) ist die Treppe hinuntergestürzt, blutende Wunde an der Stirn, ansprechbar', l:'Handschuhe. Keimfrei abdecken, leichter Druck (Kopfwunden bluten stark, sehen schlimmer aus als sie oft sind). Person hinsetzen. WICHTIG: Nach Sturz auf Bewusstsein, Übelkeit, Erbrechen, Verwirrtheit achten (Gehirnerschütterung/schlimmeres). Bei solchen Zeichen oder tiefer Wunde → 112 bzw. Arzt.' },
+  { k:'Blutungen & Wunden', t:'Nasenbluten',             o:'Flur',        d:'Schüler (11 J.) hat starkes Nasenbluten nach einem Ballstoß, hört nicht auf', l:'Hinsetzen, Kopf nach VORNE beugen (nicht in den Nacken!). Nasenflügel 10 Min am Stück fest zusammendrücken, nicht zwischendurch lösen. Kalten Lappen in den Nacken. Durch den Mund atmen, Blut ausspucken. Länger als 20 Min oder nach Sturz auf den Kopf → Arzt.' },
+  { k:'Blutungen & Wunden', t:'Schürfwunde',             o:'Pausenhof',   d:'Schülerin (10 J.) ist gestürzt, Knie aufgeschürft, weint und hat Angst', l:'Handschuhe. Trösten (Kinder haben oft mehr Angst als Schmerz). Wunde nicht auswaschen/auspusten. Keimfrei abdecken (Pflaster/Wundauflage). Bei starker Verschmutzung → ärztlich reinigen lassen, an Tetanus denken.' },
+  { k:'Blutungen & Wunden', t:'Fingerverletzung',        o:'Werkraum',    d:'Schüler (15 J.) hat sich den Finger eingeklemmt, blutet, Fingerkuppe verletzt', l:'Handschuhe. Blutung durch Druck stillen, keimfrei abdecken. Bei abgetrenntem Teil: Teil keimfrei einwickeln, kühl (nicht direkt auf Eis) lagern, mit zum Arzt. Finger ruhigstellen. Immer ärztlich vorstellen.' },
 
-  { k:'Knochen & Gelenke', t:'Verstauchter Knöchel',     o:'Sporthalle', d:'Schüler (14 J.) ist beim Basketball umgeknickt, Knöchel geschwollen, kann nicht auftreten' },
-  { k:'Knochen & Gelenke', t:'Geschlossener Bruch',      o:'Pausenhof',  d:'Schüler (13 J.) ist gestürzt, Unterarm fehlgestellt, starke Schmerzen' },
-  { k:'Knochen & Gelenke', t:'Offener Bruch',            o:'Sporthalle', d:'Schüler (16 J.) ist beim Turnen gestürzt, Knochen ist sichtbar, blutet' },
-  { k:'Knochen & Gelenke', t:'Schlüsselbein-Verdacht',   o:'Sportplatz', d:'Schüler (15 J.) nach Zusammenstoß: Schmerzen an der Schulter, Schonhaltung des Arms' },
-  { k:'Knochen & Gelenke', t:'Rippenprellung',           o:'Sportplatz', d:'Schüler (17 J.) hat nach einem Sturz Schmerzen beim Atmen' },
+  { k:'Knochen & Gelenke', t:'Verstauchter Knöchel',     o:'Sporthalle', d:'Schüler (14 J.) ist beim Basketball umgeknickt, Knöchel geschwollen, kann nicht auftreten', l:'PECH: Pause (sofort aufhören), Eis (kühlen, Tuch dazwischen, ~20 Min), Compression (elastischer Verband), Hochlagern. Nicht weiter belasten. Bei Fehlstellung, starker Schwellung oder wenn gar kein Auftreten möglich → Arzt (Bruch möglich).' },
+  { k:'Knochen & Gelenke', t:'Geschlossener Bruch',      o:'Pausenhof',  d:'Schüler (13 J.) ist gestürzt, Unterarm fehlgestellt, starke Schmerzen', l:'Nicht bewegen, nicht einrenken. Ruhigstellen wie vorgefunden, mit Decken/Kleidung abpolstern. Kühlen (Tuch dazwischen). Auf Schock achten. 112 bzw. Arzt. Nichts zu essen/trinken (evtl. OP).' },
+  { k:'Knochen & Gelenke', t:'Offener Bruch',            o:'Sporthalle', d:'Schüler (16 J.) ist beim Turnen gestürzt, Knochen ist sichtbar, blutet', l:'Nicht bewegen, nicht einrenken, Knochen NICHT zurückdrücken. Wunde keimfrei und locker abdecken (nicht spülen). Ruhigstellen, abpolstern. Auf Schock achten, warm halten. 112. Nichts zu essen/trinken.' },
+  { k:'Knochen & Gelenke', t:'Schlüsselbein-Verdacht',   o:'Sportplatz', d:'Schüler (15 J.) nach Zusammenstoß: Schmerzen an der Schulter, Schonhaltung des Arms', l:'Arm in Schonhaltung ruhigstellen — der Betroffene stützt ihn meist selbst am besten. Nicht ziehen/bewegen. Kühlen. Zum Arzt/Unfallchirurgen. Bei starker Fehlstellung oder Atemproblemen → 112.' },
+  { k:'Knochen & Gelenke', t:'Rippenprellung',           o:'Sportplatz', d:'Schüler (17 J.) hat nach einem Sturz Schmerzen beim Atmen', l:'Bequeme, meist aufrechte Position, die das Atmen erleichtert. Zum ruhigen, flachen Weiteratmen ermutigen (Schonatmung vermeiden). Kühlen. Bei starker Atemnot, blauen Lippen oder Verdacht auf mehr → 112.' },
 
-  { k:'Verbrennung & Chemie', t:'Verbrennung Hand',     o:'Chemieraum', d:'Schülerin (16 J.) hat die Hand an einer heißen Platte verbrannt, Rötung und Blasen' },
-  { k:'Verbrennung & Chemie', t:'Verbrühung Arm',       o:'Mensa',      d:'Schüler (12 J.) hat sich heißen Tee über den Unterarm geschüttet' },
-  { k:'Verbrennung & Chemie', t:'Chemikalie ins Auge',  o:'Chemieraum', d:'Schüler (17 J.): Spritzer ins Auge, brennende Schmerzen, kneift das Auge zu' },
-  { k:'Verbrennung & Chemie', t:'Verätzung der Haut',   o:'Chemieraum', d:'Schülerin (17 J.) hat Chemikalie auf dem Unterarm, Haut rötet sich, brennt' },
-  { k:'Verbrennung & Chemie', t:'Dämpfe eingeatmet',    o:'Chemieraum', d:'Schüler (16 J.) hat Dämpfe eingeatmet, hustet, klagt über Schwindel' },
+  { k:'Verbrennung & Chemie', t:'Verbrennung Hand',     o:'Chemieraum', d:'Schülerin (16 J.) hat die Hand an einer heißen Platte verbrannt, Rötung und Blasen', l:'Sofort 10–20 Min mit lauwarmem (nicht eiskaltem) Wasser kühlen. Ringe/Uhr vorher abnehmen (Schwellung). Locker keimfrei abdecken. Blasen NICHT öffnen. Keine Salben/Hausmittel. Bei Blasen/größerer Fläche oder bei Kindern → Arzt.' },
+  { k:'Verbrennung & Chemie', t:'Verbrühung Arm',       o:'Mensa',      d:'Schüler (12 J.) hat sich heißen Tee über den Unterarm geschüttet', l:'Durchtränkte, heiße Kleidung sofort entfernen (solange nicht festgeklebt). 10–20 Min lauwarm kühlen. Locker keimfrei abdecken. Keine Salben. Bei größerer Fläche, Blasen oder Kind → ärztlich.' },
+  { k:'Verbrennung & Chemie', t:'Chemikalie ins Auge',  o:'Chemieraum', d:'Schüler (17 J.): Spritzer ins Auge, brennende Schmerzen, kneift das Auge zu', l:'Sofort und lange mit viel Wasser spülen (mind. 10–15 Min). Kopf so neigen, dass die Chemikalie NICHT ins gesunde Auge läuft (betroffenes Auge unten). Lid vorsichtig offen halten. Danach keimfrei abdecken. 112. Behälter/Etikett mitnehmen. Nicht reiben, nicht neutralisieren.' },
+  { k:'Verbrennung & Chemie', t:'Verätzung der Haut',   o:'Chemieraum', d:'Schülerin (17 J.) hat Chemikalie auf dem Unterarm, Haut rötet sich, brennt', l:'Handschuhe, Eigenschutz. Durchtränkte Kleidung entfernen. Betroffene Stelle lange mit viel Wasser spülen (mind. 10–15 Min). Locker keimfrei abdecken. Nicht neutralisieren. 112 bzw. Arzt. Chemikalien-Info mitnehmen.' },
+  { k:'Verbrennung & Chemie', t:'Dämpfe eingeatmet',    o:'Chemieraum', d:'Schüler (16 J.) hat Dämpfe eingeatmet, hustet, klagt über Schwindel', l:'Eigenschutz! An die frische Luft bringen, Fenster/Türen auf. Beruhigen, aufrecht sitzen lassen (erleichtert Atmung). Bei Atemnot, Husten, Schwindel → 112. Was eingeatmet wurde herausfinden (Etikett). Nicht selbst in den Gefahrenbereich gehen.' },
 
-  { k:'Innere Ursachen', t:'Unterzuckerung',        o:'Klassenzimmer', d:'Schülerin (13 J.), Diabetikerin: zittrig, blass, schwitzt, wirkt verwirrt' },
-  { k:'Innere Ursachen', t:'Überzuckerung',         o:'Klassenzimmer', d:'Schüler (15 J.), Diabetiker: großer Durst, muss oft aufs Klo, sehr müde' },
-  { k:'Innere Ursachen', t:'Starke Bauchschmerzen', o:'Klassenzimmer', d:'Schüler (12 J.) hat starke Bauchschmerzen rechts unten und ist übel' },
-  { k:'Innere Ursachen', t:'Migräne',               o:'Bibliothek',    d:'Schülerin (16 J.) hat starke Kopfschmerzen, ist lichtempfindlich und übel' },
-  { k:'Innere Ursachen', t:'Druck auf der Brust',   o:'Lehrerzimmer',  d:'Lehrer (58 J.) klagt über Druck auf der Brust, schwitzt, bekommt schlecht Luft' },
-  { k:'Innere Ursachen', t:'Schlaganfall-Verdacht', o:'Aula',          d:'Besucherin (67 J.): hängender Mundwinkel, verwaschene Sprache, ein Arm ist kraftlos' },
+  { k:'Innere Ursachen', t:'Unterzuckerung',        o:'Klassenzimmer', d:'Schülerin (13 J.), Diabetikerin: zittrig, blass, schwitzt, wirkt verwirrt', l:'Ansprechbar → schnell Zucker: Traubenzucker, Saft, gezuckerte Limo. Nach einigen Minuten bessert es sich, dann etwas Richtiges essen. Bewusstseinsgetrübt/bewusstlos → NICHTS einflößen (Erstickungsgefahr), Seitenlage + 112. Im Zweifel Zucker geben — das schadet weniger als eine unbehandelte Unterzuckerung.' },
+  { k:'Innere Ursachen', t:'Überzuckerung',         o:'Klassenzimmer', d:'Schüler (15 J.), Diabetiker: großer Durst, muss oft aufs Klo, sehr müde', l:'Entwickelt sich langsam (Durst, häufiges Wasserlassen, Müdigkeit, evtl. Azetongeruch). Ansprechbar → Wasser trinken lassen, Ruhe. Diabetiker kennen meist ihre Werte/ihr Insulin. Bei Bewusstseinstrübung, tiefer Atmung oder Verschlechterung → 112.' },
+  { k:'Innere Ursachen', t:'Starke Bauchschmerzen', o:'Klassenzimmer', d:'Schüler (12 J.) hat starke Bauchschmerzen rechts unten und ist übel', l:'Bequeme Lagerung, oft mit angezogenen Beinen. Beruhigen. NICHTS zu essen/trinken geben, keine Schmerzmittel (könnte OP nötig sein / Diagnose verschleiern). Bei starken/anhaltenden Schmerzen rechts unten, hartem Bauch, Fieber oder Erbrechen → ärztlich abklären, im Zweifel 112.' },
+  { k:'Innere Ursachen', t:'Migräne',               o:'Bibliothek',    d:'Schülerin (16 J.) hat starke Kopfschmerzen, ist lichtempfindlich und übel', l:'Reizarme Umgebung: dunkel, ruhig, kühl. Hinlegen lassen. Eigene Medikamente nehmen lassen, falls vorhanden. Trinken anbieten. Bei allererster, schlagartiger „Vernichtungs"-Kopfschmerz, Lähmung, Sprachstörung oder Nackensteife → sofort 112 (Warnzeichen für Schlimmeres).' },
+  { k:'Innere Ursachen', t:'Druck auf der Brust',   o:'Lehrerzimmer',  d:'Lehrer (58 J.) klagt über Druck auf der Brust, schwitzt, bekommt schlecht Luft', l:'Verdacht Herzinfarkt — sofort 112, nicht abwarten. Oberkörper erhöht lagern, enge Kleidung öffnen, beruhigen, jede Anstrengung vermeiden (nicht laufen lassen). Nicht allein lassen, Bewusstsein/Atmung beobachten. AED bereithalten. Bei Bewusstlosigkeit + keiner normalen Atmung → Reanimation.' },
+  { k:'Innere Ursachen', t:'Schlaganfall-Verdacht', o:'Aula',          d:'Besucherin (67 J.): hängender Mundwinkel, verwaschene Sprache, ein Arm ist kraftlos', l:'FAST-Test: Face (Mundwinkel hängt?), Arms (Arm sinkt ab?), Speech (verwaschene Sprache?), Time (bei einem Zeichen sofort 112). Uhrzeit des Beginns merken (wichtig für die Klinik). Oberkörper leicht erhöht, nichts zu essen/trinken. Auch wenn Zeichen wieder verschwinden: trotzdem 112.' },
 
-  { k:'Allergie & Insekten', t:'Bienenstich',          o:'Pausenhof', d:'Schüler (11 J.) wurde am Arm gestochen, Schwellung und Schmerz, sonst wohlauf' },
-  { k:'Allergie & Insekten', t:'Stich im Mundraum',    o:'Pausenhof', d:'Schülerin (12 J.) wurde beim Trinken in die Lippe gestochen, Schwellung nimmt zu' },
-  { k:'Allergie & Insekten', t:'Anaphylaktischer Schock', o:'Mensa',  d:'Schülerin (14 J.) mit Nussallergie: Quaddeln, Schwellung im Gesicht, Atemnot' },
+  { k:'Allergie & Insekten', t:'Bienenstich',          o:'Pausenhof', d:'Schüler (11 J.) wurde am Arm gestochen, Schwellung und Schmerz, sonst wohlauf', l:'Stachel möglichst mit dem Fingernagel/Karte seitlich wegkratzen (nicht mit Pinzette quetschen). Kühlen, beobachten. Meist harmlos. ABER: Bei Atemnot, Schwellung im Gesicht/Hals, Quaddeln am ganzen Körper → allergischer Schock, sofort 112.' },
+  { k:'Allergie & Insekten', t:'Stich im Mundraum',    o:'Pausenhof', d:'Schülerin (12 J.) wurde beim Trinken in die Lippe gestochen, Schwellung nimmt zu', l:'Gefährlich — Schwellung kann die Atemwege verlegen. Sofort 112. Etwas Kaltes lutschen/kühlen lassen (Eiswürfel, kaltes Wasser), Kragen öffnen, aufrecht sitzen, beruhigen. Atmung genau beobachten.' },
+  { k:'Allergie & Insekten', t:'Anaphylaktischer Schock', o:'Mensa',  d:'Schülerin (14 J.) mit Nussallergie: Quaddeln, Schwellung im Gesicht, Atemnot', l:'Lebensbedrohlich, sofort 112. Auslöser entfernen (Essen weg). Adrenalin-Pen (falls vorhanden) anwenden lassen/helfen. Atemnot → aufrecht sitzen; Kreislaufprobleme → flach mit Beinen hoch. Nicht allein lassen, Atmung überwachen. Bei Atem-/Kreislaufstillstand → Reanimation.' },
 
-  { k:'Umwelt & Sonstiges', t:'Sonnenstich',       o:'Sportplatz', d:'Schüler (10 J.) bei den Bundesjugendspielen: hochroter Kopf, Kopfschmerzen, Übelkeit' },
-  { k:'Umwelt & Sonstiges', t:'Hitzeerschöpfung',  o:'Sportplatz', d:'Schülerin (15 J.) ist blass, schwitzt stark, ist schwindelig und schlapp' },
-  { k:'Umwelt & Sonstiges', t:'Unterkühlung',      o:'Pausenhof',  d:'Schüler (13 J.) zittert stark, hat blaue Lippen und kalte Hände' },
-  { k:'Umwelt & Sonstiges', t:'Zahnunfall',        o:'Pausenhof',  d:'Schüler (12 J.): Zahn ausgeschlagen, blutet aus dem Mund, Zahn liegt daneben' },
-  { k:'Umwelt & Sonstiges', t:'Fremdkörper im Auge', o:'Werkraum', d:'Schüler (14 J.) hat etwas ins Auge bekommen, tränt stark, kneift zu' },
-  { k:'Umwelt & Sonstiges', t:'Stromschlag',       o:'Physikraum', d:'Schüler (17 J.) ist nach einem Stromschlag benommen, Hand schmerzt' },
+  { k:'Umwelt & Sonstiges', t:'Sonnenstich',       o:'Sportplatz', d:'Schüler (10 J.) bei den Bundesjugendspielen: hochroter Kopf, Kopfschmerzen, Übelkeit', l:'In den Schatten/kühlen Raum. Oberkörper und Kopf leicht erhöht lagern. Kopf und Nacken mit feuchten, kühlen Tüchern kühlen. Ansprechbar → langsam trinken lassen. Bei Bewusstseinsstörung, Krampf oder Erbrechen → 112 (Hitzschlag-Gefahr).' },
+  { k:'Umwelt & Sonstiges', t:'Hitzeerschöpfung',  o:'Sportplatz', d:'Schülerin (15 J.) ist blass, schwitzt stark, ist schwindelig und schlapp', l:'In den Schatten/kühlen Raum. Flach hinlegen, Beine hochlagern. Kleidung öffnen, kühlen, ansprechbar → salzhaltige Flüssigkeit/Wasser in Schlucken. Bessert sich meist. Bei Verwirrtheit, sehr heißer trockener Haut oder Bewusstlosigkeit → Hitzschlag, sofort 112.' },
+  { k:'Umwelt & Sonstiges', t:'Unterkühlung',      o:'Pausenhof',  d:'Schüler (13 J.) zittert stark, hat blaue Lippen und kalte Hände', l:'In warme Umgebung, vor Wind schützen. Nasse Kleidung entfernen, in Decken/Rettungsdecke einpacken (auch Kopf). Ansprechbar → warmes, gezuckertes Getränk. Vorsichtig bewegen, NICHT rubbeln/massieren. Kein Alkohol. Bei starker Unterkühlung/Bewusstseinstrübung → 112, sehr behutsam bewegen.' },
+  { k:'Umwelt & Sonstiges', t:'Zahnunfall',        o:'Pausenhof',  d:'Schüler (12 J.): Zahn ausgeschlagen, blutet aus dem Mund, Zahn liegt daneben', l:'Zahn nur an der Krone anfassen (nicht an der Wurzel), nicht abwischen/abwaschen. In Zahnrettungsbox legen, sonst H-Milch/Kochsalzlösung/Frischhaltefolie — feucht halten ist entscheidend. Blutung: auf sauberes Tuch beißen lassen. Schnell zum Zahnarzt (möglichst innerhalb 1 Std).' },
+  { k:'Umwelt & Sonstiges', t:'Fremdkörper im Auge', o:'Werkraum', d:'Schüler (14 J.) hat etwas ins Auge bekommen, tränt stark, kneift zu', l:'Nicht reiben. Loses Teilchen: mit Wasser ausspülen oder blinzeln lassen. Festsitzendes/eingedrungenes Teil NICHT entfernen — beide Augen locker abdecken (damit das Auge ruhig bleibt) und zum Arzt. Bei Chemikalie → lange spülen (siehe Auge-Verätzung).' },
+  { k:'Umwelt & Sonstiges', t:'Stromschlag',       o:'Physikraum', d:'Schüler (17 J.) ist nach einem Stromschlag benommen, Hand schmerzt', l:'Eigenschutz zuerst! Strom abschalten (Sicherung/Stecker), Person erst dann berühren. 112. Auf Bewusstsein/Atmung prüfen — bei Stillstand Reanimation. Verbrennungen (Ein-/Austrittstelle) kühlen und abdecken. Auch bei Wohlbefinden ärztlich vorstellen (Herzrhythmus kann später stören).' },
 ];
 
 let emIsDrill = false;
@@ -2750,10 +2756,23 @@ window.setEmCat = setEmCat;
 
 function applyScenario() {
   const i = document.getElementById('em-scenario').value;
-  if (i === '') return;
+  const loeBox = document.getElementById('em-loesung');
+  if (i === '') {
+    if (loeBox) loeBox.classList.add('hidden');
+    return;
+  }
   const s = UEBUNGS_SZENARIEN[Number(i)];
   document.getElementById('em-desc').value = s.d;
   document.getElementById('em-loc').value = s.o;
+  // Musterlösung zum Anleiten/Auflösen anzeigen (nur der Lehrer sieht dieses Fenster)
+  if (loeBox) {
+    if (s.l) {
+      loeBox.innerHTML = '<strong style="color:var(--accent2)">💡 Musterlösung:</strong><br>' + esc(s.l);
+      loeBox.classList.remove('hidden');
+    } else {
+      loeBox.classList.add('hidden');
+    }
+  }
 }
 window.applyScenario = applyScenario;
 
