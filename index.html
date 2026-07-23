@@ -198,7 +198,7 @@ nav{display:flex;flex-direction:column;gap:3px;}
 .wa-cn{font-weight:600;font-size:.87rem;}
 .wa-cl{font-size:.73rem;color:var(--text2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .wa-ct{font-size:.65rem;color:var(--text2);flex-shrink:0;align-self:flex-start;padding-top:2px;}
-.wa-main{flex:1;display:flex;flex-direction:column;background:var(--bg);}
+.wa-main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg);}
 .wa-hdr{padding:10px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--bg2);}
 .wa-hav{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;}
 .wa-hi{flex:1;}
@@ -564,7 +564,7 @@ body.teacher button.to{display:inline-flex;}
       </div>
     </div>
     <div class="user-card" id="server-status-card" style="padding:9px 11px">
-      <div style="display:flex;align-items:center;justify-content:space-between;font-size:.78rem">
+      <div style="display:none;align-items:center;justify-content:space-between;font-size:.78rem">
         <span style="display:flex;align-items:center;gap:6px"><span id="dot-local" style="width:7px;height:7px;border-radius:50%;background:var(--text2);flex-shrink:0"></span>Lokaler Server</span>
         <button class="btn-ghost" style="font-size:.74rem" onclick="openServerModal()">Einrichten</button>
       </div>
@@ -715,7 +715,7 @@ body.teacher button.to{display:inline-flex;}
     </section>
     <section id="v-chat" class="view hidden" style="padding:14px 14px 0">
       <div class="wa">
-        <aside class="wa-sb">
+        <aside class="wa-sb" style="display:none">
           <div class="wa-sb-top"><h3>💬 Chats</h3><button class="btn btn-secondary btn-sm to" id="new-chat-btn" style="display:none">+ Neu</button></div>
           <div class="wa-srch"><input type="text" id="chat-srch" placeholder="🔍 Suchen..."></div>
           <div class="wa-contacts" id="wa-contacts"></div>
@@ -726,7 +726,7 @@ body.teacher button.to{display:inline-flex;}
             <div class="wa-hi"><h4 id="wa-hname">Gruppe</h4><span class="wa-hs">Online</span></div>
             <div class="to" style="display:none;align-items:center;gap:9px;flex-wrap:wrap">
               <label style="display:flex;align-items:center;gap:6px;font-size:.79rem;color:var(--text2);cursor:pointer"><input type="checkbox" id="chat-allow" checked style="accent-color:var(--accent2)"> Schüler dürfen schreiben</label>
-              <button class="btn btn-danger btn-sm" id="del-chat-btn">🗑️ Chat</button>
+              <button class="btn btn-danger btn-sm" id="del-chat-btn" style="display:none">🗑️ Chat</button>
             </div>
           </div>
           <div class="wa-msgs" id="wa-msgs"></div>
@@ -1166,11 +1166,34 @@ async function loadCheckEntries() {
   dbFehler('Check-Kalender laden', error);
   checkEntries = data || [];
 }
+// Es gibt genau EINEN Chat: den AG-Gruppenchat, in dem alle drin sind.
+// Falls er noch nicht existiert, wird er beim ersten Start angelegt.
+const GRUPPEN_CHAT_NAME = 'Sani AG';
+
 async function loadContacts() {
   const { data, error } = await sb.from('chat_contacts').select('*').order('created_at');
   dbFehler('Chat-Kontakte laden', error);
   contacts = data || [];
-  if (contacts.length) { activeChatId = contacts[0].id; await loadMessages(activeChatId); }
+
+  // Gruppenchat suchen — oder anlegen, wenn es ihn noch nicht gibt
+  let gruppe = contacts.find(c => c.name === GRUPPEN_CHAT_NAME);
+  if (!gruppe) {
+    const { data: neu, error: err2 } = await sb.from('chat_contacts')
+      .insert({ name: GRUPPEN_CHAT_NAME, initial: '🚑', color: '#4f8ef7' })
+      .select().single();
+    if (err2) {
+      dbFehler('Gruppenchat anlegen', err2);
+      // Fallback: falls parallel jemand anders ihn angelegt hat, nochmal laden
+      const { data: retry } = await sb.from('chat_contacts').select('*').order('created_at');
+      contacts = retry || [];
+      gruppe = contacts.find(c => c.name === GRUPPEN_CHAT_NAME) || contacts[0];
+    } else {
+      gruppe = neu;
+      contacts.push(neu);
+    }
+  }
+
+  if (gruppe) { activeChatId = gruppe.id; await loadMessages(activeChatId); }
 }
 // Wer ist HEUTE im Dienst? Das steht im Check-Kalender: Wer sich dort für
 // mindestens einen Stundenblock von heute eingetragen hat, ist im Dienst.
@@ -2940,10 +2963,11 @@ document.getElementById('send-emergency-btn')?.addEventListener('click', async (
   saveCache();
   if (activeView() === 'chat') renderChat();
 
+  // Der frühere Zusatz "(nur Cloud — lokaler Server nicht erreichbar)" wurde
+  // entfernt: Der lokale Server wird nicht mehr genutzt, und der Hinweis ließ
+  // eine erfolgreiche Alarmierung wie einen Fehler aussehen.
   let note = '';
-  if (cloudEm && localEmVal) note = ' (Cloud + lokal bestätigt)';
-  else if (localEmVal) note = ' (nur lokal — kein Internet, Alarm bleibt auf Schul-WLAN beschränkt)';
-  else note = ' (nur Cloud — lokaler Server nicht erreichbar/eingerichtet)';
+  if (localEmVal && !cloudEm) note = ' (nur lokal — kein Internet)';
 
   if (nobodyOnDuty) {
     // Niemand im Dienst -> keine Sanis alarmiert. Auslöser (i.d.R. Sekretariat)
