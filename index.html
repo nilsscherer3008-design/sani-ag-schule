@@ -1167,7 +1167,6 @@ async function loadCheckEntries() {
   checkEntries = data || [];
 }
 // Es gibt genau EINEN Chat: den AG-Gruppenchat, in dem alle drin sind.
-// Falls er noch nicht existiert, wird er beim ersten Start angelegt.
 const GRUPPEN_CHAT_NAME = 'Sani AG';
 
 async function loadContacts() {
@@ -1175,18 +1174,20 @@ async function loadContacts() {
   dbFehler('Chat-Kontakte laden', error);
   contacts = data || [];
 
-  // Gruppenchat suchen — oder anlegen, wenn es ihn noch nicht gibt
-  let gruppe = contacts.find(c => c.name === GRUPPEN_CHAT_NAME);
+  // WICHTIG: Wenn es schon einen Chat gibt, nehmen wir den ÄLTESTEN als
+  // Gruppenchat — sonst wären alle bisherigen Nachrichten unsichtbar, weil sie
+  // am alten Chat hängen. Nur wenn es gar keinen gibt, wird einer angelegt.
+  let gruppe = contacts[0];
+
   if (!gruppe) {
     const { data: neu, error: err2 } = await sb.from('chat_contacts')
       .insert({ name: GRUPPEN_CHAT_NAME, initial: '🚑', color: '#4f8ef7' })
       .select().single();
     if (err2) {
       dbFehler('Gruppenchat anlegen', err2);
-      // Fallback: falls parallel jemand anders ihn angelegt hat, nochmal laden
       const { data: retry } = await sb.from('chat_contacts').select('*').order('created_at');
       contacts = retry || [];
-      gruppe = contacts.find(c => c.name === GRUPPEN_CHAT_NAME) || contacts[0];
+      gruppe = contacts[0];
     } else {
       gruppe = neu;
       contacts.push(neu);
@@ -1229,7 +1230,8 @@ async function loadSaniPhones() {
   } catch (e) {}
 }
 async function loadMessages(contactId) {
-  const { data } = await sb.from('chat_messages').select('*').eq('contact_id', contactId).order('created_at');
+  const { data, error } = await sb.from('chat_messages').select('*').eq('contact_id', contactId).order('created_at');
+  dbFehler('Chat-Nachrichten laden', error);
   allMessages[contactId] = data || [];
 }
 
