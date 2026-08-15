@@ -1,0 +1,18 @@
+name: Supabase wachhalten
+
+# Läuft automatisch alle 3 Tage — Supabase pausiert erst nach ~7 Tagen ganz
+# ohne Nutzung, also ist 3 Tage ein sicherer Abstand mit Puffer.
+on:
+  schedule:
+    - cron: '0 6 */3 * *'   # alle 3 Tage, 6:00 Uhr UTC
+  workflow_dispatch:         # erlaubt: manuell auf "Run workflow" klicken zum Testen
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kurze Anfrage an Supabase schicken
+        run: |
+          curl -s -o /dev/null -w "Antwort-Code: %{http_code}\n" \
+            "https://ljxvgqvutawlyjzuhmgc.supabase.co/rest/v1/role_codes?select=role&limit=1" \
+            -H "apikey: sb_publishable_Qz9ZoKHYkVFlx8BHBnQNXQ_nO2_onNj"
